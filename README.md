@@ -49,6 +49,9 @@ Now that your git metadata has been updated you are ready to create a bugfix bra
 ```
 git checkout -b my-bugfix-branch ubuntu/stable
 ```
+Note that some projects may have a different main branch (for example, many projects still use 'master' instead of 'stable'). If so, just besure to replace the branch name from 'stable' to the correct branch name in the above command.
+
+If you're unsure which branch to submit PRs agains, it is suggested to open the PR against whatever *default* branch gets checked out when you clone the repo. And if another destination for the changes is determined later, you can always update the PR.
 
 2. Make your desired changes and push them to your fork:
 
