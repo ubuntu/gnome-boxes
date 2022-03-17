@@ -1,0 +1,87 @@
+name: gnome-boxes
+adopt-info: gnome-boxes
+summary: Virtualization made simple
+description: |
+  Select an operating system and let Boxes download and install it for you
+  in a virtual machine.
+
+grade: stable # must be 'stable' to release into candidate/stable channels
+confinement: strict
+base: core20
+
+slots:
+  # for GtkApplication registration
+  gnome-boxes:
+    interface: dbus
+    bus: session
+    name: org.gnome.Boxes
+
+apps:
+  gnome-boxes:
+    command: usr/bin/gnome-boxes
+    extensions: [gnome-3-38]
+    plugs:
+      - gsettings
+      - network
+      - network-status
+    desktop: usr/share/applications/org.gnome.Boxes.desktop
+    common-id: org.gnome.Boxes.desktop
+
+parts:
+  libvirt-glib:
+    source: https://github.com/libvirt/libvirt-glib.git
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/snap/gnome-boxes/current/usr
+      - --buildtype=release
+
+  libhandy:
+    source: https://gitlab.gnome.org/GNOME/libhandy.git
+    source-tag: '1.5.91'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dgtk_doc=false
+      - -Dtests=false
+      - -Dexamples=false
+      - -Dglade_catalog=disabled
+
+  gnome-boxes:
+    after: [ libvirt-glib, libhandy ]
+    source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
+    source-tag: '42.rc'
+    parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
+    plugin: meson
+    meson-parameters:
+      - --prefix=/snap/gnome-boxes/current/usr
+      # - -Dvala_args="--vapidir=$SNAPCRAFT_STAGE/usr/share/vala/vapi"
+      # - -Ddisable-introspection=true
+    meson-version: 0.60.1
+    organize:
+      snap/gnome-boxes/current/usr: usr
+    build-packages:
+      - libarchive-dev
+      - libgtk-vnc-2.0-dev
+      - libosinfo-1.0-dev
+      - libusb-1.0-0-dev
+      - cmake
+    override-pull: |
+      snapcraftctl pull
+      snapcraftctl set-version $(git describe --tags --abbrev=10)
+    build-environment:
+      - PKG_CONFIG_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
+      
+  # Find files provided by the base and platform snap and ensure they aren't
+  # duplicated in this snap
+  cleanup:
+    after: [gnome-boxes]
+    plugin: nil
+    build-snaps: [core20, gtk-common-themes, gnome-3-38-2004/latest/candidate]
+    override-prime: |
+      set -eux
+      for snap in "core20" "gtk-common-themes" "gnome-3-38-2004"; do
+        cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
+      done
