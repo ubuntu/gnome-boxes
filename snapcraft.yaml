@@ -33,8 +33,21 @@ parts:
     source-depth: 1
     plugin: meson
     meson-parameters:
-      - --prefix=/snap/gnome-boxes/current/usr
+      - --prefix=/usr
       - --buildtype=release
+    build-packages:
+      - libvirt-dev
+    override-build: |
+      set -eux
+      snapcraftctl build
+      cd
+      for PC in $(find . -name "*.pc")
+      do
+        echo $PC
+        sed -i 's#exec_prefix=/usr#exec_prefix=${prefix}#' $PC
+        sed -i 's#libdir=/usr#libdir=${prefix}#' $PC
+        sed -i 's#includedir=/usr#includedir=${prefix}#' $PC
+      done
 
   libhandy:
     source: https://gitlab.gnome.org/GNOME/libhandy.git
@@ -49,14 +62,40 @@ parts:
       - -Dexamples=false
       - -Dglade_catalog=disabled
 
+  tracker:
+    source: https://gitlab.gnome.org/GNOME/tracker.git
+    #source-branch: 'tracker-3.2'
+    source-depth: 1
+    plugin: meson
+    meson-version: 0.61.3
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Ddocs=false
+      - -Dman=false
+      - -Dbash_completion=false
+      - -Dsystemd_user_services=false
+      - -Dtest_utils=false
+      - -Dintrospection=disabled
+    build-packages:
+      - asciidoc
+      - libspice-client-gtk-3.0-dev
+    override-pull: |
+      set -eux
+      snapcraftctl pull
+      #sed -i 's#true, yield: true#false#g' meson_options.txt
+      # disabling man and docs seems to be ignored by meson
+      sed -i "s#subdir('docs')##g" meson.build
+
   gnome-boxes:
-    after: [ libvirt-glib, libhandy ]
+    after: [ libvirt-glib, libhandy, tracker ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
     source-tag: '42.rc'
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
-      - --prefix=/snap/gnome-boxes/current/usr
+      - --prefix=/usr
+      - -Ddistributor_name=Ubuntu
       # - -Dvala_args="--vapidir=$SNAPCRAFT_STAGE/usr/share/vala/vapi"
       # - -Ddisable-introspection=true
     meson-version: 0.60.1
