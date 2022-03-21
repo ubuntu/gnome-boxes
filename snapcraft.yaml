@@ -1,13 +1,18 @@
 name: gnome-boxes
 adopt-info: gnome-boxes
-summary: Virtualization made simple
-description: |
-  Select an operating system and let Boxes download and install it for you
-  in a virtual machine.
-
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict
 base: core20
+
+layout:
+  /usr/share/gnome-boxes:
+    bind: $SNAP/usr/share/gnome-boxes
+  /usr/share/osinfo:
+    bind: $SNAP/usr/share/osinfo
+  /usr/share/misc/usb.ids:
+    symlink: $SNAP/usr/share/misc/usb.ids
+  /usr/share/misc/pci.ids:
+    symlink: $SNAP/usr/share/misc/pci.ids
 
 slots:
   # for GtkApplication registration
@@ -21,11 +26,16 @@ apps:
     command: usr/bin/gnome-boxes
     extensions: [gnome-3-38]
     plugs:
-      - gsettings
+      - audio-record
+      - audio-playback
+      - kvm
       - network
       - network-status
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
+    environment:
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes
+      GI_TYPELIB_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
 
 parts:
   libvirt-glib:
@@ -48,6 +58,8 @@ parts:
         sed -i 's#libdir=/usr#libdir=${prefix}#' $PC
         sed -i 's#includedir=/usr#includedir=${prefix}#' $PC
       done
+    prime:
+      - usr/lib/*/*.so.*
 
   libhandy:
     source: https://gitlab.gnome.org/GNOME/libhandy.git
@@ -61,6 +73,8 @@ parts:
       - -Dtests=false
       - -Dexamples=false
       - -Dglade_catalog=disabled
+    prime:
+      - usr/lib/*/*.so.*
 
   tracker:
     source: https://gitlab.gnome.org/GNOME/tracker.git
@@ -83,21 +97,21 @@ parts:
     override-pull: |
       set -eux
       snapcraftctl pull
-      #sed -i 's#true, yield: true#false#g' meson_options.txt
       # disabling man and docs seems to be ignored by meson
       sed -i "s#subdir('docs')##g" meson.build
+    prime:
+      - usr/lib/*/*.so.*
 
   gnome-boxes:
     after: [ libvirt-glib, libhandy, tracker ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '42.rc'
+    #source-tag: '42.rc'
+    source-branch: 'gnome-42'
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
       - --prefix=/usr
       - -Ddistributor_name=Ubuntu
-      # - -Dvala_args="--vapidir=$SNAPCRAFT_STAGE/usr/share/vala/vapi"
-      # - -Ddisable-introspection=true
     meson-version: 0.60.1
     organize:
       snap/gnome-boxes/current/usr: usr
@@ -111,16 +125,94 @@ parts:
       snapcraftctl pull
       snapcraftctl set-version $(git describe --tags --abbrev=10)
     build-environment:
+      - LD_LIBRARY_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
       - PKG_CONFIG_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
+
+  libraries:
+    after: [ gnome-boxes ]
+    plugin: nil
+    stage-packages:
+      - libasn1-8-heimdal
+      - libcacard0
+      - libcurl3-gnutls
+      - libgssapi3-heimdal
+      - libgtk-vnc-2.0-0
+      - libgvnc-1.0-0
+      - libhcrypto4-heimdal
+      - libheimbase1-heimdal
+      - libheimntlm0-heimdal
+      - libhx509-5-heimdal
+      - libkrb5-26-heimdal
+      - libldap-2.4-2
+      - libnghttp2-14
+      - libnspr4
+      - libnss3
+      - libnuma1
+      - libopus0
+      - libosinfo-1.0-0
+      - libphodav-2.0-0
+      - libroken18-heimdal
+      - librtmp1
+      - libsasl2-2
+      - libspice-client-glib-2.0-8
+      - libspice-client-gtk-3.0-5
+      - libssh-4
+      - libusb-1.0-0
+      - libusbredirhost1
+      - libusbredirparser1
+      - libva-x11-2
+      - libvirt0
+      - libwind0-heimdal
+      - libyajl2
+      - osinfo-db
+      - pci.ids
+      - usb.ids
+
+    prime:
+      - usr/lib/*/libasn*.so.*
+      - usr/lib/*/libcaca*.so.*
+      - usr/lib/*/libcurl*.so.*
+      - usr/lib/*/libgss**.so.*
+      - usr/lib/*/libgtk-vnc*.so.*
+      - usr/lib/*/libgvnc*.so.*
+      - usr/lib/*/libhcrypt*.so.*
+      - usr/lib/*/libhei*.so.*
+      - usr/lib/*/libhx*.so.*
+      - usr/lib/*/libkrb*.so.*
+      - usr/lib/*/liblber*.so.*
+      - usr/lib/*/libldap*.so.*
+      - usr/lib/*/libng*.so.*
+      - usr/lib/*/libns*.so*
+      - usr/lib/*/libnuma*.so.*
+      - usr/lib/*/libopus*.so.*
+      - usr/lib/*/libosinfo*.so.*
+      - usr/lib/*/libphodav*.so.*
+      - usr/lib/*/libplc*.so*
+      - usr/lib/*/libpld*.so*
+      - usr/lib/*/libroken*.so.*
+      - usr/lib/*/librtmp*.so.*
+      - usr/lib/*/libsasl*.so.*
+      - usr/lib/*/libspice*.so.*
+      - usr/lib/*/libssh*.so.*
+      - usr/lib/*/libusb*.so.*
+      - lib/*/libusb*.so.*
+      - usr/lib/*/libva*.so.*
+      - usr/lib/*/libvirt*.so.*
+      - usr/lib/*/libwind*.so.*
+      - usr/lib/*/libyaj*.so.*
+      - usr/share/osinfo
+      - usr/share/misc/pci.ids
+      - usr/share/misc/usb.ids
+      - var/lib/usbutils/usb.ids
       
   # Find files provided by the base and platform snap and ensure they aren't
   # duplicated in this snap
-  cleanup:
-    after: [gnome-boxes]
-    plugin: nil
-    build-snaps: [core20, gtk-common-themes, gnome-3-38-2004/latest/candidate]
-    override-prime: |
-      set -eux
-      for snap in "core20" "gtk-common-themes" "gnome-3-38-2004"; do
-        cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
-      done
+  #cleanup:
+  #  after: [ libraries ]
+  #  plugin: nil
+  #  build-snaps: [core20, gtk-common-themes, gnome-3-38-2004]
+  #  override-prime: |
+  #    set -eux
+  #    for snap in "core20" "gtk-common-themes" "gnome-3-38-2004"; do
+  #      cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
+  #    done
