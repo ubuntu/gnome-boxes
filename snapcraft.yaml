@@ -47,17 +47,6 @@ parts:
       - --buildtype=release
     build-packages:
       - libvirt-dev
-    override-build: |
-      set -eux
-      snapcraftctl build
-      cd $SNAPCRAFT_PART_BUILD
-      for PC in $(find . -name "libvirt-g*.pc")
-      do
-        echo $PC
-        sed -i 's#exec_prefix=/usr#exec_prefix=${prefix}#' $PC
-        sed -i 's#libdir=/usr#libdir=${prefix}#' $PC
-        sed -i 's#includedir=/usr#includedir=${prefix}#' $PC
-      done
     prime:
       - usr/lib/*/*.so.*
 
@@ -125,6 +114,7 @@ parts:
       snapcraftctl pull
       snapcraftctl set-version $(git describe --tags --abbrev=10)
     build-environment:
+      - C_INCLUDE_PATH: $C_INCLUDE_PATH:$SNAPCRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-glib-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-gobject-1.0
       - LD_LIBRARY_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
       - PKG_CONFIG_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
 
