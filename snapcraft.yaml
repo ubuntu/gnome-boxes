@@ -50,7 +50,6 @@ parts:
     override-build: |
       set -eux
       snapcraftctl build
-      cd $SNAPCRAFT_STAGE
       for PC in $(find . -name "*.pc")
       do
         echo $PC
