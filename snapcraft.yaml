@@ -164,6 +164,7 @@ parts:
       - libwind0-heimdal
       - libyajl2
       - osinfo-db
+      - libosinfo-bin
       - pci.ids
       - usb.ids
 
@@ -200,6 +201,7 @@ parts:
       - usr/lib/*/libwind*.so.*
       - usr/lib/*/libyaj*.so.*
       - usr/share/osinfo
+      - usr/bin/osinfo*
       - usr/share/misc/pci.ids
       - usr/share/misc/usb.ids
       - var/lib/usbutils/usb.ids
