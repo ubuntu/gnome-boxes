@@ -50,7 +50,8 @@ parts:
     override-build: |
       set -eux
       snapcraftctl build
-      for PC in $(find . -name "*.pc")
+      cd $SNAPCRAFT_PART_BUILD
+      for PC in $(find . -name "libvirt-g*.pc")
       do
         echo $PC
         sed -i 's#exec_prefix=/usr#exec_prefix=${prefix}#' $PC
