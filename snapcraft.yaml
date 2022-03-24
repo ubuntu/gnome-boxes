@@ -13,6 +13,18 @@ layout:
     symlink: $SNAP/usr/share/misc/usb.ids
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt
+  /usr/share/libvirt:
+    bind: $SNAP/usr/share/libvirt
+  /usr/share/seabios:
+    bind: $SNAP/usr/share/seabios
+  /usr/lib/ipxe:
+    bind: $SNAP/usr/lib/ipxe
+  /usr/bin/qemu-system-x86_64:
+    bind-file: $SNAP/usr/bin/qemu-system-x86_64
+  /usr/sbin/dnsmasq:
+    bind-file: $SNAP/usr/sbin/dnsmasq
 
 slots:
   # for GtkApplication registration
@@ -28,10 +40,19 @@ apps:
     plugs:
       - audio-record
       - audio-playback
+      - hardware-observe
       - home
       - kvm
+      - login-session-observe
+      - mount-observe
       - network
+      - network-bind
       - network-status
+      - process-control
+      - system-observe
+      - time-control
+      - udisks2
+      - upower-observe
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
     environment:
@@ -214,6 +235,17 @@ parts:
       # fix broken focal revision
       FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
       sed -i "s/20.04.3/$FOCAL/" $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
+
+  qemu:
+    plugin: nil
+    after: [ osinfo-db ]
+    stage-packages:
+      - dnsmasq-base
+      - ipxe-qemu
+      - libvirt-daemon
+      - qemu-system-x86
+      - qemu-utils
+      - seabios
 
   # Find files provided by the base and platform snap and ensure they aren't
   # duplicated in this snap
