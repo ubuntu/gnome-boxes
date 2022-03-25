@@ -17,6 +17,8 @@ layout:
     bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt
   /usr/share/libvirt:
     bind: $SNAP/usr/share/libvirt
+  /usr/lib/libvirt:
+    bind: $SNAP/usr/lib/libvirt
   /usr/share/seabios:
     bind: $SNAP/usr/share/seabios
   /usr/lib/ipxe:
@@ -61,8 +63,104 @@ apps:
       GI_TYPELIB_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
 
 parts:
+  libvirt:
+    source: https://gitlab.com/libvirt/libvirt.git
+    source-depth: 1
+    source-branch: v6.0.0
+    plugin: autotools
+    build-packages:
+      - libxml2-dev
+      - libncurses5-dev
+      - libreadline-dev
+      - zlib1g-dev
+      - libgcrypt20-dev
+      - libgnutls28-dev
+      - libsasl2-dev
+      - libxen-dev
+      - libparted-dev
+      - libdevmapper-dev
+      - uuid-dev
+      - libudev-dev
+      - libpciaccess-dev
+      - libcurl4-gnutls-dev
+      - libpolkit-gobject-1-dev
+      - libcap-ng-dev
+      - libnl-3-dev
+      - libnl-route-3-dev
+      - libyajl-dev
+      - libpcap0.8-dev
+      - libnuma-dev
+      - libsanlock-dev
+      - libaudit-dev
+      - libselinux1-dev
+      - libapparmor-dev
+      - libdbus-1-dev
+      - systemtap-sdt-dev
+      - libzfslinux-dev
+      - librbd-dev
+      - librados-dev
+      - libglusterfs-dev
+      - libwireshark-dev
+      - libwiretap-dev
+      - libfuse-dev
+      - qemu-utils
+      - python3-docutils
+      - qemu-system-common
+      - xsltproc
+    stage-packages:
+      - libacl1
+      - libapparmor1
+      - libaudit1
+      - libblkid1
+      - libcap-ng0
+      - libcurl3-gnutls
+      - libdbus-1-3
+      - libdevmapper1.02.1
+      - libfuse2
+      - libgcc-s1
+      - libgfapi0
+      - libgfrpc0
+      - libgfxdr0
+      - libglib2.0-0
+      - libglusterfs0
+      - libgnutls30
+      - libnl-3-200
+      - libnuma1
+      - libparted2
+      - libpcap0.8
+      - librados2
+      - librbd1
+      - libsanlock-client1
+      - libsasl2-2
+      - libselinux1
+      - libtirpc3
+      - libudev1
+      - libxencall1
+      - libxenmisc4.11
+      - libxendevicemodel1
+      - libxenevtchn1
+      - libxenforeignmemory1
+      - libxengnttab1
+      - libxenstore3.0
+      - libxentoolcore1
+      - libxentoollog1
+      - libxml2
+      - libyajl2
+    build-environment:
+      - CFLAGS: "-Wno-error"
+    override-build: |
+      git apply $SNAPCRAFT_PROJECT_DIR/libvirt-qemu.patch
+      mkdir build && cd build
+      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
+      make
+      DESTDIR=$SNAPCRAFT_PART_INSTALL make install
+    prime:
+      - -usr/include
+      - -usr/lib/pkgconfig
+
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
+    after: [ libvirt ]
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -174,7 +272,6 @@ parts:
       - libusbredirhost1
       - libusbredirparser1
       - libva-x11-2
-      - libvirt0
       - libwind0-heimdal
       - libyajl2
       - libosinfo-bin
@@ -213,7 +310,6 @@ parts:
       - usr/lib/*/libusb*.so.*
       - lib/*/libusb*.so.*
       - usr/lib/*/libva*.so.*
-      - usr/lib/*/libvirt*.so.*
       - usr/lib/*/libwind*.so.*
       - usr/lib/*/libyaj*.so.*
       - usr/bin/osinfo*
@@ -243,7 +339,6 @@ parts:
     stage-packages:
       - dnsmasq-base
       - ipxe-qemu
-      - libvirt-daemon
       - qemu-system-x86
       - qemu-utils
       - seabios
@@ -257,6 +352,7 @@ parts:
     prime:
       - -README.md
       - -snapcraft.yaml
+      - -libvirt-qemu.patch
 
   # Find files provided by the base and platform snap and ensure they aren't
   # duplicated in this snap
