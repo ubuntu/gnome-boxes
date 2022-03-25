@@ -36,6 +36,7 @@ slots:
 apps:
   gnome-boxes:
     command: usr/bin/gnome-boxes
+    command-chain: [ bin/launcher ]
     extensions: [gnome-3-38]
     plugs:
       - audio-record
@@ -246,6 +247,16 @@ parts:
       - qemu-system-x86
       - qemu-utils
       - seabios
+
+  launcher:
+    plugin: dump
+    after: [ qemu ]
+    source: .
+    organize:
+      launcher.sh: bin/launcher
+    prime:
+      - -README.md
+      - -snapcraft.yaml
 
   # Find files provided by the base and platform snap and ensure they aren't
   # duplicated in this snap
