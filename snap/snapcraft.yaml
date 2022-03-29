@@ -13,6 +13,24 @@ layout:
     symlink: $SNAP/usr/share/misc/usb.ids
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt
+  /usr/share/libvirt:
+    bind: $SNAP/usr/share/libvirt
+  /usr/lib/libvirt:
+    bind: $SNAP/usr/lib/libvirt
+  /usr/share/seabios:
+    bind: $SNAP/usr/share/seabios
+  /usr/lib/ipxe:
+    bind: $SNAP/usr/lib/ipxe
+  /usr/bin/qemu-system-x86_64:
+    bind-file: $SNAP/usr/bin/qemu-system-x86_64
+  /usr/sbin/dnsmasq:
+    bind-file: $SNAP/usr/sbin/dnsmasq
+  /usr/share/qemu:
+    bind: $SNAP/usr/share/qemu
+  /etc/libvirt:
+    bind: $SNAP/etc/libvirt
 
 slots:
   # for GtkApplication registration
@@ -24,22 +42,132 @@ slots:
 apps:
   gnome-boxes:
     command: usr/bin/gnome-boxes
+    command-chain: [ bin/launcher ]
     extensions: [gnome-3-38]
     plugs:
       - audio-record
       - audio-playback
+      - camera
+      - hardware-observe
+      - home
       - kvm
+      - login-session-observe
+      - mount-observe
       - network
+      - network-bind
       - network-status
+      - process-control
+      - raw-usb
+      - system-observe
+      - time-control
+      - udisks2
+      - upower-observe
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
     environment:
       LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes
       GI_TYPELIB_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
+      GTK_USE_PORTAL: '0'
 
 parts:
+  libvirt:
+    source: https://gitlab.com/libvirt/libvirt.git
+    source-depth: 1
+    source-branch: v6.0.0
+    plugin: autotools
+    build-packages:
+      - libxml2-dev
+      - libncurses5-dev
+      - libreadline-dev
+      - zlib1g-dev
+      - libgcrypt20-dev
+      - libgnutls28-dev
+      - libsasl2-dev
+      - libxen-dev
+      - libparted-dev
+      - libdevmapper-dev
+      - uuid-dev
+      - libudev-dev
+      - libpciaccess-dev
+      - libcurl4-gnutls-dev
+      - libpolkit-gobject-1-dev
+      - libcap-ng-dev
+      - libnl-3-dev
+      - libnl-route-3-dev
+      - libyajl-dev
+      - libpcap0.8-dev
+      - libnuma-dev
+      - libsanlock-dev
+      - libaudit-dev
+      - libselinux1-dev
+      - libapparmor-dev
+      - libdbus-1-dev
+      - systemtap-sdt-dev
+      - libzfslinux-dev
+      - librbd-dev
+      - librados-dev
+      - libglusterfs-dev
+      - libwireshark-dev
+      - libwiretap-dev
+      - libfuse-dev
+      - qemu-utils
+      - python3-docutils
+      - qemu-system-common
+      - xsltproc
+    stage-packages:
+      - libacl1
+      - libapparmor1
+      - libaudit1
+      - libblkid1
+      - libcap-ng0
+      - libcurl3-gnutls
+      - libdbus-1-3
+      - libdevmapper1.02.1
+      - libfuse2
+      - libgcc-s1
+      - libgfapi0
+      - libgfrpc0
+      - libgfxdr0
+      - libglib2.0-0
+      - libglusterfs0
+      - libgnutls30
+      - libnl-3-200
+      - libnuma1
+      - libparted2
+      - libpcap0.8
+      - librados2
+      - librbd1
+      - libsanlock-client1
+      - libsasl2-2
+      - libselinux1
+      - libtirpc3
+      - libudev1
+      - libxencall1
+      - libxenmisc4.11
+      - libxendevicemodel1
+      - libxenevtchn1
+      - libxenforeignmemory1
+      - libxengnttab1
+      - libxenstore3.0
+      - libxentoolcore1
+      - libxentoollog1
+      - libxml2
+      - libyajl2
+    build-environment:
+      - CFLAGS: "-Wno-error"
+    override-build: |
+      git apply $SNAPCRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
+      mkdir build && cd build
+      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
+      make
+      DESTDIR=$SNAPCRAFT_PART_INSTALL make install
+    prime:
+      - -usr/include
+      - -usr/lib/pkgconfig
+
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
+    after: [ libvirt ]
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -151,13 +279,14 @@ parts:
       - libusbredirhost1
       - libusbredirparser1
       - libva-x11-2
-      - libvirt0
       - libwind0-heimdal
       - libyajl2
-      - osinfo-db
       - libosinfo-bin
       - pci.ids
       - usb.ids
+
+    stage:
+      - -usr/share/osinfo
 
     prime:
       - usr/lib/*/libasn*.so.*
@@ -188,15 +317,43 @@ parts:
       - usr/lib/*/libusb*.so.*
       - lib/*/libusb*.so.*
       - usr/lib/*/libva*.so.*
-      - usr/lib/*/libvirt*.so.*
       - usr/lib/*/libwind*.so.*
       - usr/lib/*/libyaj*.so.*
-      - usr/share/osinfo
       - usr/bin/osinfo*
       - usr/share/misc/pci.ids
       - usr/share/misc/usb.ids
       - var/lib/usbutils/usb.ids
       
+  osinfo-db:
+    plugin: make
+    after: [ libraries ]
+    source: https://salsa.debian.org/libvirt-team/osinfo-db.git
+    build-packages:
+      - gettext
+      - osinfo-db-tools
+      - wget
+    override-build: |
+      snapcraftctl build
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
+      tar xf osinfo-db-*.tar.xz --strip-components=1 -C $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
+      # fix broken focal revision
+      FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
+      sed -i "s/20.04.3/$FOCAL/" $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
+
+  qemu:
+    plugin: nil
+    after: [ osinfo-db ]
+    stage-snaps: [ qemu-virgil/latest/edge ]
+    stage-packages:
+      - dnsmasq-base
+
+  launcher:
+    plugin: dump
+    after: [ qemu ]
+    source: scripts
+    organize:
+      launcher.sh: bin/launcher
+
   # Find files provided by the base and platform snap and ensure they aren't
   # duplicated in this snap
   #cleanup:

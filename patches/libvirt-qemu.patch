@@ -1,0 +1,12 @@
+diff --git a/src/qemu/qemu_process.c b/src/qemu/qemu_process.c
+index 4195042..e8c1028 100644
+--- a/src/qemu/qemu_process.c
++++ b/src/qemu/qemu_process.c
+@@ -8368,6 +8368,7 @@ qemuProcessQMPNew(const char *binary,
+ static int
+ qemuProcessQEMULabelUniqPath(qemuProcessQMPPtr proc)
+ {
++    return 0;
+     /* We cannot use the security driver here, but we should not need to. */
+     if (chown(proc->uniqDir, proc->runUid, -1) < 0) {
+         virReportSystemError(errno,
