@@ -156,7 +156,7 @@ parts:
     build-environment:
       - CFLAGS: "-Wno-error"
     override-build: |
-      git apply $SNAPCRAFT_PROJECT_DIR/libvirt-qemu.patch
+      git apply $SNAPCRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
       mkdir build && cd build
       ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
       make
@@ -350,13 +350,9 @@ parts:
   launcher:
     plugin: dump
     after: [ qemu ]
-    source: .
+    source: scripts
     organize:
       launcher.sh: bin/launcher
-    prime:
-      - -README.md
-      - -snapcraft.yaml
-      - -libvirt-qemu.patch
 
   # Find files provided by the base and platform snap and ensure they aren't
   # duplicated in this snap
