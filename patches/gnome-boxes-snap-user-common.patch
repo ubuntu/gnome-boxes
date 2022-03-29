@@ -1,0 +1,19 @@
+diff --git a/src/util.vala b/src/util.vala
+index 00ff156c..79d957c7 100644
+--- a/src/util.vala
++++ b/src/util.vala
+@@ -73,7 +73,13 @@ public string get_user_pkgconfig (string? file_name = null) {
+     }
+ 
+     public string get_user_pkgdata (string? file_name = null) {
+-        var dir = Path.build_filename (Environment.get_user_data_dir (), Config.PACKAGE_TARNAME);
++	unowned string snap_user_common = Environment.get_variable ("SNAP_USER_COMMON");
++	var dir="";
++	if (snap_user_common != null) {
++		dir = Path.build_filename (snap_user_common, Config.PACKAGE_TARNAME);
++	} else {
++		dir = Path.build_filename (Environment.get_user_data_dir (), Config.PACKAGE_TARNAME);
++	}
+ 
+         ensure_directory (dir);
+ 
