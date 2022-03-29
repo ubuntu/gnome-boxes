@@ -31,6 +31,8 @@ layout:
     bind: $SNAP/usr/share/qemu
   /etc/libvirt:
     bind: $SNAP/etc/libvirt
+  /usr/libexec/libvirt_iohelper:
+    bind-file: $SNAP/usr/libexec/libvirt_iohelper
 
 slots:
   # for GtkApplication registration
