@@ -27,6 +27,10 @@ layout:
     bind-file: $SNAP/usr/bin/qemu-system-x86_64
   /usr/sbin/dnsmasq:
     bind-file: $SNAP/usr/sbin/dnsmasq
+  /usr/share/qemu:
+    bind: $SNAP/usr/share/qemu
+  /etc/libvirt:
+    bind: $SNAP/etc/libvirt
 
 slots:
   # for GtkApplication registration
@@ -43,6 +47,7 @@ apps:
     plugs:
       - audio-record
       - audio-playback
+      - camera
       - hardware-observe
       - home
       - kvm
@@ -52,6 +57,7 @@ apps:
       - network-bind
       - network-status
       - process-control
+      - raw-usb
       - system-observe
       - time-control
       - udisks2
@@ -61,6 +67,7 @@ apps:
     environment:
       LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes
       GI_TYPELIB_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
+      GTK_USE_PORTAL: '0'
 
 parts:
   libvirt:
@@ -336,12 +343,9 @@ parts:
   qemu:
     plugin: nil
     after: [ osinfo-db ]
+    stage-snaps: [ qemu-virgil/latest/edge ]
     stage-packages:
       - dnsmasq-base
-      - ipxe-qemu
-      - qemu-system-x86
-      - qemu-utils
-      - seabios
 
   launcher:
     plugin: dump
