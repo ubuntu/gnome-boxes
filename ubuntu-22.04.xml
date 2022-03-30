@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<libosinfo version="0.0.1">
+  <!-- Licensed under the GNU General Public License version 2 or later.
+     See http://www.gnu.org/licenses/ for a copy of the license text -->
+  <os id="http://ubuntu.com/ubuntu/22.04">
+    <short-id>ubuntu22.04</short-id>
+    <short-id>ubuntujammy</short-id>
+    <name>Ubuntu 22.04</name>
+    <name xml:lang="ko">우분투 22.04</name>
+    <name xml:lang="uk">Ubuntu 22.04</name>
+    <name xml:lang="tr">Ubuntu 22.04</name>
+    <name xml:lang="pl">Ubuntu 22.04</name>
+    <name xml:lang="it">Ubuntu 22.04</name>
+    <name xml:lang="id">Ubuntu 22.04</name>
+    <version>22.04</version>
+    <vendor>Canonical Ltd</vendor>
+    <vendor xml:lang="ko">Canonical Ltd</vendor>
+    <vendor xml:lang="uk">Canonical Ltd</vendor>
+    <vendor xml:lang="tr">Canonical Ltd</vendor>
+    <vendor xml:lang="pt_BR">Canonical Ltd</vendor>
+    <vendor xml:lang="pl">Canonical Ltd</vendor>
+    <vendor xml:lang="ja">Canonical Ltd</vendor>
+    <vendor xml:lang="it">Canonical Ltd</vendor>
+    <vendor xml:lang="id">Canonical Ltd</vendor>
+    <vendor xml:lang="fr">Canonical Ltd</vendor>
+    <vendor xml:lang="es">Canonical Ltd</vendor>
+    <vendor xml:lang="de">Canonical Ltd</vendor>
+    <vendor xml:lang="ca">Canonical Ltd</vendor>
+    <family>linux</family>
+    <distro>ubuntu</distro>
+    <codename>Jammy Jellyfish</codename>
+    <upgrades id="http://ubuntu.com/ubuntu/20.04"/>
+    <derives-from id="http://ubuntu.com/ubuntu/21.04"/>
+    <release-date>2022-04-21</release-date>
+    <release-status>prerelease</release-status>
+    <resources arch="all">
+      <minimum>
+        <cpu>1000000000</cpu>
+        <n-cpus>1</n-cpus>
+        <ram>2147483648</ram>
+        <storage>5368709120</storage>
+      </minimum>
+      <recommended>
+        <cpu>2000000000</cpu>
+        <ram>4294967296</ram>
+        <storage>26843545600</storage>
+      </recommended>
+    </resources>
+    <media arch="x86_64" live="true" installer-script="false">
+      <url>http://cdimage.ubuntu.com/daily-live/current/jammy-desktop-amd64.iso</url>
+      <iso>
+        <volume-id>Ubuntu 22.04(.\d\+?)?(.\d\+?)? amd64</volume-id>
+      </iso>
+      <kernel>casper/vmlinuz</kernel>
+      <initrd>casper/initrd</initrd>
+    </media>
+  </os>
+</libosinfo>

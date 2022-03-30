@@ -246,6 +246,8 @@ parts:
       sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $SNAPCRAFT_PART_SRC/help/meson.build
       # Ensure we save VMs in $SNAP_USER_COMMON
       git apply $SNAPCRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
+      # Update recommended downloads
+      git apply $SNAPCRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
     build-environment:
       - C_INCLUDE_PATH: $C_INCLUDE_PATH:$SNAPCRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-glib-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-gobject-1.0
       - LD_LIBRARY_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
@@ -341,6 +343,7 @@ parts:
       snapcraftctl build
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
       tar xf osinfo-db-*.tar.xz --strip-components=1 -C $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
+      cp $SNAPCRAFT_PROJECT_DIR/ubuntu-22.04.xml $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
       # fix broken focal revision
       FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
       sed -i "s/20.04.3/$FOCAL/" $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml

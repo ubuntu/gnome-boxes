@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<libosinfo version="0.0.1">
+  <!-- Licensed under the GNU General Public License version 2 or later.
+     See http://www.gnu.org/licenses/ for a copy of the license text -->
+  <os id="http://ubuntu.com/ubuntu/devel">
+    <short-id>ubuntudevel</short-id>
+    <short-id>ubuntudevel</short-id>
+    <name>Ubuntu Devel</name>
+    <name xml:lang="ko">우분투 Devel</name>
+    <name xml:lang="uk">Ubuntu Devel</name>
+    <name xml:lang="tr">Ubuntu Devel</name>
+    <name xml:lang="pl">Ubuntu Devel</name>
+    <name xml:lang="it">Ubuntu Devel</name>
+    <name xml:lang="id">Ubuntu Devel</name>
+    <version>Devel</version>
+    <vendor>Canonical Ltd</vendor>
+    <vendor xml:lang="ko">Canonical Ltd</vendor>
+    <vendor xml:lang="uk">Canonical Ltd</vendor>
+    <vendor xml:lang="tr">Canonical Ltd</vendor>
+    <vendor xml:lang="pt_BR">Canonical Ltd</vendor>
+    <vendor xml:lang="pl">Canonical Ltd</vendor>
+    <vendor xml:lang="ja">Canonical Ltd</vendor>
+    <vendor xml:lang="it">Canonical Ltd</vendor>
+    <vendor xml:lang="id">Canonical Ltd</vendor>
+    <vendor xml:lang="fr">Canonical Ltd</vendor>
+    <vendor xml:lang="es">Canonical Ltd</vendor>
+    <vendor xml:lang="de">Canonical Ltd</vendor>
+    <vendor xml:lang="ca">Canonical Ltd</vendor>
+    <family>linux</family>
+    <distro>ubuntu</distro>
+    <codename>Jammy Jellyfish</codename>
+    <upgrades id="http://ubuntu.com/ubuntu/22.04"/>
+    <derives-from id="http://ubuntu.com/ubuntu/22.04"/>
+    <release-date>20Devel-14</release-date>
+    <resources arch="all">
+      <minimum>
+        <cpu>1000000000</cpu>
+        <n-cpus>1</n-cpus>
+        <ram>2147483648</ram>
+        <storage>5368709120</storage>
+      </minimum>
+      <recommended>
+        <cpu>2000000000</cpu>
+        <ram>4294967296</ram>
+        <storage>26843545600</storage>
+      </recommended>
+    </resources>
+    <media arch="x86_64" live="true" installer-script="false">
+      <url>http://cdimage.ubuntu.com/daily-live/current/jammy-desktop-amd64.iso</url>
+      <iso>
+        <volume-id>Ubuntu Devel(.\d\+?)?(.\d\+?)? amd64</volume-id>
+      </iso>
+      <kernel>casper/vmlinuz</kernel>
+      <initrd>casper/initrd</initrd>
+    </media>
+    <installer>
+      <script id="http://ubuntu.com/ubuntu/preseed/desktop"/>
+    </installer>
+  </os>
+</libosinfo>
