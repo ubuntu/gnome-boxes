@@ -38,7 +38,7 @@
         <cpu>1000000000</cpu>
         <n-cpus>1</n-cpus>
         <ram>2147483648</ram>
-        <storage>5368709120</storage>
+        <storage>10737418240</storage>
       </minimum>
       <recommended>
         <cpu>2000000000</cpu>

@@ -343,7 +343,7 @@ parts:
       snapcraftctl build
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
       tar xf osinfo-db-*.tar.xz --strip-components=1 -C $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
-      cp $SNAPCRAFT_PROJECT_DIR/ubuntu-22.04.xml $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
+      cp $SNAPCRAFT_PROJECT_DIR/ubuntu-daily.xml $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
       # fix broken focal revision
       FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
       sed -i "s/20.04.3/$FOCAL/" $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
