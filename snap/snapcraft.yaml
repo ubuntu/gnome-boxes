@@ -197,7 +197,7 @@ parts:
 
   tracker:
     source: https://gitlab.gnome.org/GNOME/tracker.git
-    #source-branch: 'tracker-3.2'
+    source-branch: 'tracker-3.3'
     source-depth: 1
     plugin: meson
     meson-version: 0.61.3
