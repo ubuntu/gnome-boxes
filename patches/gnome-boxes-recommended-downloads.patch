@@ -1,8 +1,8 @@
 diff --git a/data/recommended-downloads.xml b/data/recommended-downloads.xml
-index 178a4ae9..6bf82943 100644
+index 6502791b..8529b871 100644
 --- a/data/recommended-downloads.xml
 +++ b/data/recommended-downloads.xml
-@@ -9,14 +9,9 @@
+@@ -9,14 +9,7 @@
    available.
   -->
  <list>
@@ -11,12 +11,9 @@ index 178a4ae9..6bf82943 100644
 -  <os_id>http://fedoraproject.org/fedora/</os_id>
 -  <os_id>http://fedoraproject.org/silverblue/</os_id>
    <os_id>http://ubuntu.com/ubuntu/</os_id>
--  <os_id>http://opensuse.org/opensuse/</os_id>
+-  <os_id>http://opensuse.org/opensuse/15.4</os_id>
 -  <os_id>http://opensuse.org/opensuse/tumbleweed</os_id>
--  <os_id>http://debian.org/debian/</os_id>
+   <os_id>http://debian.org/debian/</os_id>
 -  <os_id>http://endlessos.com/eos/</os_id>
-+  <os_id>http://ubuntu.com/ubuntu/daily</os_id>
-+  <os_id>http://ubuntu.com/ubuntu/20.04</os_id>
-+  <os_id>http://ubuntu.com/ubuntu/21.10</os_id>
    <os_id>http://gnome.org/gnome/nightly</os_id>
  </list>
