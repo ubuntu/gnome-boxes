@@ -182,7 +182,7 @@ parts:
 
   libhandy:
     source: https://gitlab.gnome.org/GNOME/libhandy.git
-    source-tag: '1.5.91'
+    source-tag: '1.8.2'
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -330,7 +330,7 @@ parts:
       - usr/share/misc/pci.ids
       - usr/share/misc/usb.ids
       - var/lib/usbutils/usb.ids
-      
+
   osinfo-db:
     plugin: make
     after: [ libraries ]
