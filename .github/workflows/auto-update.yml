@@ -1,4 +1,4 @@
-name: Open a PR if a new update is available
+name: Push new tag update to stable branch
 
 on:
   schedule:
