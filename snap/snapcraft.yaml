@@ -2,7 +2,7 @@ name: gnome-boxes
 adopt-info: gnome-boxes
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict
-base: core20
+base: core22
 
 layout:
   /usr/share/gnome-boxes:
@@ -13,8 +13,8 @@ layout:
     symlink: $SNAP/usr/share/misc/usb.ids
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt
+  /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
+    bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/libvirt
   /usr/share/libvirt:
     bind: $SNAP/usr/share/libvirt
   /usr/lib/libvirt:
@@ -45,7 +45,7 @@ apps:
   gnome-boxes:
     command: usr/bin/gnome-boxes
     command-chain: [ bin/launcher ]
-    extensions: [gnome-3-38]
+    extensions: [gnome]
     plugs:
       - audio-record
       - audio-playback
@@ -67,16 +67,17 @@ apps:
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
     environment:
-      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes
-      GI_TYPELIB_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes
+      GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
       GTK_USE_PORTAL: '0'
 
 parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
+    after: [ qemu ]
+    source-tag: 'v9.3.0'
     source-depth: 1
-    source-branch: v6.0.0
-    plugin: autotools
+    plugin: meson
     build-packages:
       - libxml2-dev
       - libncurses5-dev
@@ -112,9 +113,7 @@ parts:
       - libwireshark-dev
       - libwiretap-dev
       - libfuse-dev
-      - qemu-utils
       - python3-docutils
-      - qemu-system-common
       - xsltproc
     stage-packages:
       - libacl1
@@ -145,24 +144,28 @@ parts:
       - libtirpc3
       - libudev1
       - libxencall1
-      - libxenmisc4.11
+      - libxenmisc4.16
       - libxendevicemodel1
       - libxenevtchn1
       - libxenforeignmemory1
       - libxengnttab1
-      - libxenstore3.0
+      - libxenstore4
       - libxentoolcore1
       - libxentoollog1
       - libxml2
       - libyajl2
     build-environment:
       - CFLAGS: "-Wno-error"
-    override-build: |
-      git apply $SNAPCRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
-      mkdir build && cd build
-      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
-      make
-      DESTDIR=$SNAPCRAFT_PART_INSTALL make install
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dexpensive_tests=disabled
+#    override-build: |
+#      git apply $CRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
+#      mkdir build && cd build
+#      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
+#      make
+#      DESTDIR=$CRAFT_PART_INSTALL make install
     prime:
       - -usr/include
       - -usr/lib/pkgconfig
@@ -171,6 +174,7 @@ parts:
     source: https://github.com/libvirt/libvirt-glib.git
     after: [ libvirt ]
     source-depth: 1
+    source-tag: 'v4.0.0'
     plugin: meson
     meson-parameters:
       - --prefix=/usr
@@ -180,27 +184,11 @@ parts:
     prime:
       - usr/lib/*/*.so.*
 
-  libhandy:
-    source: https://gitlab.gnome.org/GNOME/libhandy.git
-    source-tag: '1.8.2'
-    source-depth: 1
-    plugin: meson
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-      - -Dgtk_doc=false
-      - -Dtests=false
-      - -Dexamples=false
-      - -Dglade_catalog=disabled
-    prime:
-      - usr/lib/*/*.so.*
-
   tracker:
     source: https://gitlab.gnome.org/GNOME/tracker.git
-    source-branch: 'tracker-3.3'
+    source-tag: '3.5.1'
     source-depth: 1
     plugin: meson
-    meson-version: 0.61.3
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
@@ -209,52 +197,68 @@ parts:
       - -Dbash_completion=false
       - -Dsystemd_user_services=false
       - -Dtest_utils=false
-      - -Dintrospection=disabled
+      - -Dintrospection=enabled
     build-packages:
       - asciidoc
       - libspice-client-gtk-3.0-dev
     override-pull: |
       set -eux
-      snapcraftctl pull
+      craftctl default
       # disabling man and docs seems to be ignored by meson
       sed -i "s#subdir('docs')##g" meson.build
     prime:
       - usr/lib/*/*.so.*
 
+  libosinfo:
+    after: [ libvirt-glib, tracker ]
+    source: https://gitlab.com/libosinfo/libosinfo.git
+    source-tag: 'v1.10.0'
+    source-depth: 1
+    plugin: meson
+    override-pull: |
+      set -eux
+      craftctl default
+      git apply $CRAFT_PROJECT_DIR/patches/libosinfo.patch
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Denable-gtk-doc=false
+      - -Denable-tests=false
+      - -Dlibsoup-abi=2.4
+    build-packages:
+      - libxslt1-dev
+
   gnome-boxes:
-    after: [ libvirt-glib, libhandy, tracker ]
+    after: [ libvirt-glib, tracker, libosinfo ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    #source-tag: '42.rc'
-    source-branch: 'gnome-42'
+    source-depth: 1
+    source-tag: '44.1'
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
       - --prefix=/usr
+      - --buildtype=release
       - -Ddistributor_name=Ubuntu
-    meson-version: 0.60.1
-    organize:
-      snap/gnome-boxes/current/usr: usr
     build-packages:
       - libarchive-dev
       - libgtk-vnc-2.0-dev
-      - libosinfo-1.0-dev
       - libusb-1.0-0-dev
       - cmake
     override-pull: |
-      snapcraftctl pull
-      snapcraftctl set-version $(git describe --tags --abbrev=10)
-      sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $SNAPCRAFT_PART_SRC/help/meson.build
+      craftctl default
+      craftctl set version=$(git describe --tags --abbrev=10)
+      sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $CRAFT_PART_SRC/help/meson.build
       # Ensure we save VMs in $SNAP_USER_COMMON
-      git apply $SNAPCRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
+      git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
       # Update recommended downloads
-      git apply $SNAPCRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
+      # git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
     build-environment:
-      - C_INCLUDE_PATH: $C_INCLUDE_PATH:$SNAPCRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-glib-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-gobject-1.0
-      - LD_LIBRARY_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
-      - PKG_CONFIG_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
+      - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0:$CRAFT_STAGE/usr/include/libosinfo-1.0
+      - LD_LIBRARY_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
+      - PKG_CONFIG_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
 
   libraries:
-    after: [ gnome-boxes ]
+    after: [ gnome-boxes, qemu, smbd ]
     plugin: nil
     stage-packages:
       - libasn1-8-heimdal
@@ -268,13 +272,12 @@ parts:
       - libheimntlm0-heimdal
       - libhx509-5-heimdal
       - libkrb5-26-heimdal
-      - libldap-2.4-2
+      - libldap-2.5-0
       - libnghttp2-14
       - libnspr4
       - libnss3
       - libnuma1
       - libopus0
-      - libosinfo-1.0-0
       - libphodav-2.0-0
       - libroken18-heimdal
       - librtmp1
@@ -287,13 +290,10 @@ parts:
       - libusbredirparser1
       - libva-x11-2
       - libwind0-heimdal
+      - libxslt1.1
       - libyajl2
-      - libosinfo-bin
       - pci.ids
       - usb.ids
-
-    stage:
-      - -usr/share/osinfo
 
     prime:
       - usr/lib/*/libasn*.so.*
@@ -312,7 +312,6 @@ parts:
       - usr/lib/*/libns*.so*
       - usr/lib/*/libnuma*.so.*
       - usr/lib/*/libopus*.so.*
-      - usr/lib/*/libosinfo*.so.*
       - usr/lib/*/libphodav*.so.*
       - usr/lib/*/libplc*.so*
       - usr/lib/*/libpld*.so*
@@ -326,34 +325,185 @@ parts:
       - usr/lib/*/libva*.so.*
       - usr/lib/*/libwind*.so.*
       - usr/lib/*/libyaj*.so.*
-      - usr/bin/osinfo*
       - usr/share/misc/pci.ids
       - usr/share/misc/usb.ids
       - var/lib/usbutils/usb.ids
 
-  osinfo-db:
-    plugin: make
-    after: [ libraries ]
-    source: https://salsa.debian.org/libvirt-team/osinfo-db.git
+  # osinfo-db:
+  #   plugin: make
+  #   after: [ libraries ]
+  #   source: https://salsa.debian.org/libvirt-team/osinfo-db.git
+  #   build-packages:
+  #     - gettext
+  #     - osinfo-db-tools
+  #     - wget
+  #   override-build: |
+  #     craftctl default
+  #     mkdir -p $CRAFT_PART_INSTALL/usr/share/osinfo
+  #     tar xf osinfo-db-*.tar.xz --strip-components=1 -C $CRAFT_PART_INSTALL/usr/share/osinfo
+  #     cp $CRAFT_PROJECT_DIR/ubuntu-daily.xml $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
+  #     # fix broken focal revision
+  #     FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
+  #     sed -i "s/20.04.3/$FOCAL/" $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
+
+  virgl:
+    source: https://gitlab.freedesktop.org/virgl/virglrenderer.git
+    source-tag: '0.10.4'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
     build-packages:
-      - gettext
-      - osinfo-db-tools
-      - wget
-    override-build: |
-      snapcraftctl build
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
-      tar xf osinfo-db-*.tar.xz --strip-components=1 -C $SNAPCRAFT_PART_INSTALL/usr/share/osinfo
-      cp $SNAPCRAFT_PROJECT_DIR/ubuntu-daily.xml $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
-      # fix broken focal revision
-      FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
-      sed -i "s/20.04.3/$FOCAL/" $SNAPCRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
+      - libgbm-dev
+      - libdrm-dev
+      - libepoxy-dev
 
   qemu:
-    plugin: nil
-    after: [ osinfo-db ]
-    stage-snaps: [ qemu-virgil/latest/edge ]
+    after: [ virgl ]
+    source: https://gitlab.com/qemu-project/qemu.git
+    source-tag: 'v6.2.0'
+    source-depth: 1
+    plugin: autotools
+    autotools-configure-parameters:
+      - --prefix=/usr
+      - --target-list=x86_64-softmmu,aarch64-softmmu,arm-softmmu
+      - --audio-drv-list=pa,sdl
+      - --enable-malloc=jemalloc
+      - --enable-libusb
+      - --enable-usb-redir
+      - --enable-sdl
+      - --enable-spice
+      - --disable-werror
+#    plugin: meson
+#    meson-parameters:
+#      - --prefix=/usr
+#      - --buildtype=release
+#      - -Daudio_drv_list=pa,sdl
+#      - -Dmalloc=jemalloc
+#      - -Dlibusb=enabled
+#      - -Dusb_redir=enabled
+#      - -Dsdl=enabled
+#      - -Dspice=enabled
+#    override-build: |
+#      $CRAFT_PART_SRC/configure --disable-werror
+#      craftctl default
+    build-packages:
+      - bison
+      - flex
+      - gettext
+      - libaio-dev
+      - libbluetooth-dev
+      - libbrlapi-dev
+      - libbz2-dev
+      - libcap-dev
+      - libcap-ng-dev
+      - libcurl4-gnutls-dev
+      - libgtk-3-dev
+      - libibverbs-dev
+      - libjemalloc-dev
+      - libjpeg8-dev
+      - libncurses5-dev
+      - libnuma-dev
+      - librbd-dev
+      - librdmacm-dev
+      - libsasl2-dev
+      - libsdl2-dev
+      - libsdl2-image-dev
+      - libseccomp-dev
+      - libsnappy-dev
+      - libspice-protocol-dev
+      - libspice-server-dev
+      - libusb-1.0-0-dev
+      - libusbredirparser-dev
+      - libvde-dev
+      - libvdeplug-dev
+      - libvte-2.91-dev
+      - libxen-dev
+      - liblzo2-dev
+      - libx11-dev
+      - libxml2-dev
+      - libepoxy-dev
+      - libglib2.0-dev
+      - libfdt-dev
+      - libpixman-1-dev
+      - xfslibs-dev
+      - zlib1g-dev
+      - libnfs-dev
+      - libiscsi-dev
+      - libpulse-dev
+      - bzip2
     stage-packages:
-      - dnsmasq-base
+      - libaio1
+      - libbluetooth3
+      - libboost-iostreams1.74.0
+      - libboost-random1.74.0
+      - libboost-thread1.74.0
+      - libbrlapi0.8
+      - libflac8
+      - libiscsi7
+      - libjemalloc2
+      - libnfs13
+      - libnuma1
+      - librados2
+      - librbd1
+      - libsdl2-2.0-0
+      - libsdl2-image-2.0-0
+      - libsnappy1v5
+      - libsndio7.0
+      - libspice-server1
+      - libusb-1.0-0
+      - libusbredirparser1
+      - libvdeplug2
+      - libxencall1
+      - libxenstore4
+      - libxi6
+      - libxss1
+    prime:
+      # Fix execstack warnings
+      - -usr/share/qemu/s390-ccw.img
+      - -usr/share/qemu/s390-netboot.img
+      - -usr/share/qemu/openbios-ppc
+      # Remove cruft
+      - -usr/share/qemu/qemu-nsis.bmp
+
+  runner:
+    after: [ qemu ]
+    source: .
+    plugin: nil
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cp -av runner $SNAPCRAFT_PART_INSTALL/bin/
+
+  smbd:
+    after: [ runner ]
+    plugin: nil
+    stage-packages:
+      - samba
+    prime:
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdcerpc.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdcerpc-binding.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdcerpc-server.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libjansson.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libldb.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libndr-krb5pac.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libndr-nbt.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libndr.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libndr-standard.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnetapi.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpopt.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpython2.7.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpytalloc-util.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsamba-*.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsamdb.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsmbconf.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libsmbldap.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtalloc.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtevent.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtevent-util.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libwbclient.so*
+      - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/samba/*
+      - usr/sbin/smbd
 
   launcher:
     plugin: dump
@@ -371,5 +521,16 @@ parts:
   #  override-prime: |
   #    set -eux
   #    for snap in "core20" "gtk-common-themes" "gnome-3-38-2004"; do
-  #      cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
+  #      cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$CRAFT_PRIME/{}" \;
   #    done
+  # Find files provided by the base and platform snap and ensure they aren't
+  # duplicated in this snap
+  cleanup:
+    after: [libraries]
+    plugin: nil
+    build-snaps: [core22, gtk-common-themes, gnome-42-2204]
+    override-prime: |
+      set -eux
+      for snap in "core22" "gtk-common-themes" "gnome-42-2204"; do
+        cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$CRAFT_PRIME/{}" \;
+      done
