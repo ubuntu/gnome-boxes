@@ -9,8 +9,12 @@ layout:
     bind: $SNAP/usr/share/gnome-boxes
   /usr/share/osinfo:
     bind: $SNAP/usr/share/osinfo
+  /usr/share/libosinfo/usb.ids:
+    symlink: $SNAP/usr/share/misc/usb.ids
   /usr/share/misc/usb.ids:
     symlink: $SNAP/usr/share/misc/usb.ids
+  /usr/share/libosinfo/pci.ids:
+    symlink: $SNAP/usr/share/misc/pci.ids
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
   /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
@@ -33,6 +37,8 @@ layout:
     bind: $SNAP/etc/libvirt
   /usr/libexec/libvirt_iohelper:
     bind-file: $SNAP/usr/libexec/libvirt_iohelper
+  /usr/sbin/smbd:
+    bind-file: $SNAP/usr/sbin/smbd
 
 slots:
   # for GtkApplication registration
@@ -58,11 +64,15 @@ apps:
       - network
       - network-bind
       - network-status
+      - opengl
       - process-control
       - raw-usb
+      - removable-media
+      - screen-inhibit-control
       - system-observe
       - time-control
       - udisks2
+      - unity7
       - upower-observe
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
@@ -74,7 +84,7 @@ apps:
 parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
-    after: [ qemu ]
+    after: [ qemu, libraries, cleanup ]
     source-tag: 'v9.4.0'
     source-depth: 1
     plugin: meson
@@ -115,7 +125,213 @@ parts:
       - libfuse-dev
       - python3-docutils
       - xsltproc
+    build-environment:
+      - CFLAGS: "-Wno-error"
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dexpensive_tests=disabled
+#    override-build: |
+#      git apply $CRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
+#      mkdir build && cd build
+#      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
+#      make
+#      DESTDIR=$CRAFT_PART_INSTALL make install
+    prime:
+      - -usr/include
+      - -usr/lib/pkgconfig
+
+  libvirt-glib:
+    source: https://github.com/libvirt/libvirt-glib.git
+    after: [ libvirt ]
+    source-depth: 1
+    source-tag: 'v4.0.0'
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+    build-packages:
+      - libvirt-dev
+    prime:
+      - usr/lib/*/*.so.*
+
+  spice-protocol:
+    source: https://gitlab.freedesktop.org/spice/spice-protocol.git
+    source-tag: 'v0.14.4'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+
+  spice-gtk:
+    after: [ libphodav, spice-protocol ]
+    source: https://gitlab.freedesktop.org/spice/spice-gtk.git
+    source-tag: 'v0.42'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dgtk=enabled
+      - -Dwayland-protocols=enabled
+      - -Dintrospection=enabled
+    override-build: |
+      $CRAFT_PROJECT_DIR/parse_env.py
+      python3 -m pip install six pyparsing asciidoc
+      craftctl default
+    build-packages:
+      - libopus-dev
+      - python3-pip
+      - libgstreamer1.0-dev
+      - libgstreamer-plugins-base1.0-dev
+
+  spice-server:
+    after: [ libphodav, spice-protocol, spice-gtk ]
+    source: https://gitlab.freedesktop.org/spice/spice.git
+    source-tag: 'v0.15.2'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dmanual=false
+      - -Dtests=false
+    build-packages:
+      - liblz4-dev
+
+  tracker:
+    after: [ spice-gtk ]
+    source: https://gitlab.gnome.org/GNOME/tracker.git
+    source-tag: '3.5.3'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Ddocs=false
+      - -Dman=false
+      - -Dbash_completion=false
+      - -Dsystemd_user_services=false
+      - -Dtest_utils=false
+      - -Dintrospection=enabled
+    build-packages:
+      - asciidoc
+    override-pull: |
+      set -eux
+      craftctl default
+      # disabling man and docs seems to be ignored by meson
+      sed -i "s#subdir('docs')##g" meson.build
+    prime:
+      - usr/lib/*/*.so.*
+
+  libosinfo:
+    after: [ libvirt-glib, tracker ]
+    source: https://gitlab.com/libosinfo/libosinfo.git
+    source-tag: 'v1.10.0'
+    source-depth: 1
+    plugin: meson
+    override-pull: |
+      set -eux
+      craftctl default
+      git apply $CRAFT_PROJECT_DIR/patches/libosinfo.patch
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Denable-gtk-doc=false
+      - -Denable-tests=false
+      - -Dlibsoup-abi=3.0
+    build-packages:
+      - libxslt1-dev
+
+  gnome-boxes:
+    after: [ libvirt-glib, tracker, libosinfo ]
+    source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
+    source-depth: 1
+    source-tag: '44.2'
+    parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Ddistributor_name=Ubuntu
+    build-packages:
+      - libarchive-dev
+      - libgtk-vnc-2.0-dev
+      - libusb-1.0-0-dev
+      - cmake
+    override-build: |
+      $CRAFT_PROJECT_DIR/parse_env.py
+      craftctl default
+    override-pull: |
+      craftctl default
+      craftctl set version=$(git describe --tags --abbrev=10)
+      sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $CRAFT_PART_SRC/help/meson.build
+      # Ensure we save VMs in $SNAP_USER_COMMON
+      git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
+      # Update recommended downloads
+      # git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
+    build-environment:
+      - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0:$CRAFT_STAGE/usr/include/libosinfo-1.0
+      - LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
+      - PKG_CONFIG_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
+
+  libraries:
+    plugin: nil
     stage-packages:
+      - libasn1-8-heimdal
+      - libcacard0
+      - libcurl3-gnutls
+      - libgssapi3-heimdal
+      - libgtk-vnc-2.0-0
+      - libgvnc-1.0-0
+      - libhcrypto4-heimdal
+      - libheimbase1-heimdal
+      - libheimntlm0-heimdal
+      - libhx509-5-heimdal
+      - libkrb5-26-heimdal
+      - libldap-2.5-0
+      - libnghttp2-14
+      - libnspr4
+      - libnss3
+      - libnuma1
+      - libopus0
+      - libroken18-heimdal
+      - librtmp1
+      - libsasl2-2
+      - libssh-4
+      - libusb-1.0-0
+      - libusbredirhost1
+      - libusbredirparser1
+      - libva-x11-2
+      - libwind0-heimdal
+      - libxslt1.1
+      - libyajl2
+      - pci.ids
+      - usb.ids
+      - libaio1
+      - libbluetooth3
+      - libboost-iostreams1.74.0
+      - libboost-random1.74.0
+      - libboost-thread1.74.0
+      - libbrlapi0.8
+      - libflac8
+      - libiscsi7
+      - libnfs13
+      - libnuma1
+      - librados2
+      - librbd1
+      - libsdl2-2.0-0
+      - libsdl2-image-2.0-0
+      - libsnappy1v5
+      - libsndio7.0
+      - libusb-1.0-0
+      - libusbredirparser1
+      - libvdeplug2
+      - libxencall1
+      - libxenstore4
+      - libxi6
+      - libxss1
       - libacl1
       - libapparmor1
       - libaudit1
@@ -154,185 +370,20 @@ parts:
       - libxentoollog1
       - libxml2
       - libyajl2
-    build-environment:
-      - CFLAGS: "-Wno-error"
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-      - -Dexpensive_tests=disabled
-#    override-build: |
-#      git apply $CRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
-#      mkdir build && cd build
-#      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
-#      make
-#      DESTDIR=$CRAFT_PART_INSTALL make install
-    prime:
-      - -usr/include
-      - -usr/lib/pkgconfig
 
-  libvirt-glib:
-    source: https://github.com/libvirt/libvirt-glib.git
-    after: [ libvirt ]
-    source-depth: 1
-    source-tag: 'v4.0.0'
-    plugin: meson
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-    build-packages:
-      - libvirt-dev
-    prime:
-      - usr/lib/*/*.so.*
-
-  tracker:
-    source: https://gitlab.gnome.org/GNOME/tracker.git
-    source-tag: '3.5.3'
+  libphodav:
+    after: [ libraries, cleanup ]
+    source: https://gitlab.gnome.org/GNOME/phodav.git
+    source-tag: 'v3.0'
     source-depth: 1
     plugin: meson
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
-      - -Ddocs=false
-      - -Dman=false
-      - -Dbash_completion=false
-      - -Dsystemd_user_services=false
-      - -Dtest_utils=false
-      - -Dintrospection=enabled
-    build-packages:
-      - asciidoc
-      - libspice-client-gtk-3.0-dev
-    override-pull: |
-      set -eux
-      craftctl default
-      # disabling man and docs seems to be ignored by meson
-      sed -i "s#subdir('docs')##g" meson.build
-    prime:
-      - usr/lib/*/*.so.*
-
-  libosinfo:
-    after: [ libvirt-glib, tracker ]
-    source: https://gitlab.com/libosinfo/libosinfo.git
-    source-tag: 'v1.10.0'
-    source-depth: 1
-    plugin: meson
-    override-pull: |
-      set -eux
-      craftctl default
-      git apply $CRAFT_PROJECT_DIR/patches/libosinfo.patch
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-      - -Denable-gtk-doc=false
-      - -Denable-tests=false
-      - -Dlibsoup-abi=2.4
-    build-packages:
-      - libxslt1-dev
-
-  gnome-boxes:
-    after: [ libvirt-glib, tracker, libosinfo ]
-    source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-depth: 1
-    source-tag: '44.2'
-    parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
-    plugin: meson
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-      - -Ddistributor_name=Ubuntu
-    build-packages:
-      - libarchive-dev
-      - libgtk-vnc-2.0-dev
-      - libusb-1.0-0-dev
-      - cmake
-    override-build: |
-      $CRAFT_PROJECT_DIR/parse_env.py
-      craftctl default
-    override-pull: |
-      craftctl default
-      craftctl set version=$(git describe --tags --abbrev=10)
-      sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $CRAFT_PART_SRC/help/meson.build
-      # Ensure we save VMs in $SNAP_USER_COMMON
-      git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
-      # Update recommended downloads
-      # git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
-    build-environment:
-      - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0:$CRAFT_STAGE/usr/include/libosinfo-1.0
-      - LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
-      - PKG_CONFIG_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
-
-  libraries:
-    after: [ gnome-boxes, qemu, smbd ]
-    plugin: nil
-    stage-packages:
-      - libasn1-8-heimdal
-      - libcacard0
-      - libcurl3-gnutls
-      - libgssapi3-heimdal
-      - libgtk-vnc-2.0-0
-      - libgvnc-1.0-0
-      - libhcrypto4-heimdal
-      - libheimbase1-heimdal
-      - libheimntlm0-heimdal
-      - libhx509-5-heimdal
-      - libkrb5-26-heimdal
-      - libldap-2.5-0
-      - libnghttp2-14
-      - libnspr4
-      - libnss3
-      - libnuma1
-      - libopus0
-      - libphodav-2.0-0
-      - libroken18-heimdal
-      - librtmp1
-      - libsasl2-2
-      - libspice-client-glib-2.0-8
-      - libspice-client-gtk-3.0-5
-      - libssh-4
-      - libusb-1.0-0
-      - libusbredirhost1
-      - libusbredirparser1
-      - libva-x11-2
-      - libwind0-heimdal
-      - libxslt1.1
-      - libyajl2
-      - pci.ids
-      - usb.ids
-
-    prime:
-      - usr/lib/*/libasn*.so.*
-      - usr/lib/*/libcaca*.so.*
-      - usr/lib/*/libcurl*.so.*
-      - usr/lib/*/libgss**.so.*
-      - usr/lib/*/libgtk-vnc*.so.*
-      - usr/lib/*/libgvnc*.so.*
-      - usr/lib/*/libhcrypt*.so.*
-      - usr/lib/*/libhei*.so.*
-      - usr/lib/*/libhx*.so.*
-      - usr/lib/*/libkrb*.so.*
-      - usr/lib/*/liblber*.so.*
-      - usr/lib/*/libldap*.so.*
-      - usr/lib/*/libng*.so.*
-      - usr/lib/*/libns*.so*
-      - usr/lib/*/libnuma*.so.*
-      - usr/lib/*/libopus*.so.*
-      - usr/lib/*/libphodav*.so.*
-      - usr/lib/*/libplc*.so*
-      - usr/lib/*/libpld*.so*
-      - usr/lib/*/libroken*.so.*
-      - usr/lib/*/librtmp*.so.*
-      - usr/lib/*/libsasl*.so.*
-      - usr/lib/*/libspice*.so.*
-      - usr/lib/*/libssh*.so.*
-      - usr/lib/*/libusb*.so.*
-      - lib/*/libusb*.so.*
-      - usr/lib/*/libva*.so.*
-      - usr/lib/*/libwind*.so.*
-      - usr/lib/*/libyaj*.so.*
-      - usr/share/misc/pci.ids
-      - usr/share/misc/usb.ids
-      - var/lib/usbutils/usb.ids
+      - -Dgtk_doc=disabled
 
   virgl:
+    after: [ libraries, cleanup ]
     source: https://gitlab.freedesktop.org/virgl/virglrenderer.git
     source-tag: '0.10.4'
     source-depth: 1
@@ -342,11 +393,10 @@ parts:
       - --buildtype=release
     build-packages:
       - libgbm-dev
-      - libdrm-dev
       - libepoxy-dev
 
   qemu:
-    after: [ virgl ]
+    after: [ virgl, spice-server ]
     source: https://gitlab.com/qemu-project/qemu.git
     source-tag: 'v6.0.0'
     # version 8 added use of USERFAULTFD_IOC_NEW kernel interface, which isn't
@@ -393,8 +443,6 @@ parts:
       - libsdl2-image-dev
       - libseccomp-dev
       - libsnappy-dev
-      - libspice-protocol-dev
-      - libspice-server-dev
       - libusb-1.0-0-dev
       - libusbredirparser-dev
       - libvde-dev
@@ -414,31 +462,6 @@ parts:
       - libiscsi-dev
       - libpulse-dev
       - bzip2
-    stage-packages:
-      - libaio1
-      - libbluetooth3
-      - libboost-iostreams1.74.0
-      - libboost-random1.74.0
-      - libboost-thread1.74.0
-      - libbrlapi0.8
-      - libflac8
-      - libiscsi7
-      - libnfs13
-      - libnuma1
-      - librados2
-      - librbd1
-      - libsdl2-2.0-0
-      - libsdl2-image-2.0-0
-      - libsnappy1v5
-      - libsndio7.0
-      - libspice-server1
-      - libusb-1.0-0
-      - libusbredirparser1
-      - libvdeplug2
-      - libxencall1
-      - libxenstore4
-      - libxi6
-      - libxss1
     prime:
       # Fix execstack warnings
       - -usr/share/qemu/s390-ccw.img
