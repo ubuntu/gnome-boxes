@@ -5,6 +5,8 @@ confinement: strict
 base: core22
 
 layout:
+  /etc/mdevctl.d:
+    bind: $SNAP/etc/mdevctl.d
   /usr/share/gnome-boxes:
     bind: $SNAP/usr/share/gnome-boxes
   /usr/share/osinfo:
@@ -279,6 +281,8 @@ parts:
   libraries:
     plugin: nil
     stage-packages:
+      - mdevctl
+      - dnsmasq
       - libasn1-8-heimdal
       - libcacard0
       - libcurl3-gnutls
