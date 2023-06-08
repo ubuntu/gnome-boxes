@@ -75,7 +75,7 @@ parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
     after: [ qemu ]
-    source-tag: 'v9.3.0'
+    source-tag: 'v9.4.0'
     source-depth: 1
     plugin: meson
     build-packages:
@@ -186,7 +186,7 @@ parts:
 
   tracker:
     source: https://gitlab.gnome.org/GNOME/tracker.git
-    source-tag: '3.5.1'
+    source-tag: '3.5.3'
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -232,7 +232,7 @@ parts:
     after: [ libvirt-glib, tracker, libosinfo ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
     source-depth: 1
-    source-tag: '44.1'
+    source-tag: '44.2'
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
@@ -244,6 +244,9 @@ parts:
       - libgtk-vnc-2.0-dev
       - libusb-1.0-0-dev
       - cmake
+    override-build: |
+      $CRAFT_PROJECT_DIR/parse_env.py
+      craftctl default
     override-pull: |
       craftctl default
       craftctl set version=$(git describe --tags --abbrev=10)
@@ -254,7 +257,7 @@ parts:
       # git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
     build-environment:
       - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0:$CRAFT_STAGE/usr/include/libosinfo-1.0
-      - LD_LIBRARY_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
+      - LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
       - PKG_CONFIG_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
 
   libraries:
@@ -329,23 +332,6 @@ parts:
       - usr/share/misc/usb.ids
       - var/lib/usbutils/usb.ids
 
-  # osinfo-db:
-  #   plugin: make
-  #   after: [ libraries ]
-  #   source: https://salsa.debian.org/libvirt-team/osinfo-db.git
-  #   build-packages:
-  #     - gettext
-  #     - osinfo-db-tools
-  #     - wget
-  #   override-build: |
-  #     craftctl default
-  #     mkdir -p $CRAFT_PART_INSTALL/usr/share/osinfo
-  #     tar xf osinfo-db-*.tar.xz --strip-components=1 -C $CRAFT_PART_INSTALL/usr/share/osinfo
-  #     cp $CRAFT_PROJECT_DIR/ubuntu-daily.xml $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
-  #     # fix broken focal revision
-  #     FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
-  #     sed -i "s/20.04.3/$FOCAL/" $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
-
   virgl:
     source: https://gitlab.freedesktop.org/virgl/virglrenderer.git
     source-tag: '0.10.4'
@@ -362,32 +348,28 @@ parts:
   qemu:
     after: [ virgl ]
     source: https://gitlab.com/qemu-project/qemu.git
-    source-tag: 'v6.2.0'
+    source-tag: 'v6.0.0'
+    # version 8 added use of USERFAULTFD_IOC_NEW kernel interface, which isn't
+    # available in ubuntu < 23.04.
+    # version 7.2.2 use KVM_CAP_X86_TRIPLE_FAULT_EVENT, which is also quite recent.
+    # version 7.0.0 requires KVM_GET_XSAVE2, which is also quite recent.
+# ext:updatesnap
+#   version-format:
+#     lower-than: 6.1.0
     source-depth: 1
-    plugin: autotools
-    autotools-configure-parameters:
-      - --prefix=/usr
-      - --target-list=x86_64-softmmu,aarch64-softmmu,arm-softmmu
-      - --audio-drv-list=pa,sdl
-      - --enable-malloc=jemalloc
-      - --enable-libusb
-      - --enable-usb-redir
-      - --enable-sdl
-      - --enable-spice
-      - --disable-werror
-#    plugin: meson
-#    meson-parameters:
-#      - --prefix=/usr
-#      - --buildtype=release
-#      - -Daudio_drv_list=pa,sdl
-#      - -Dmalloc=jemalloc
-#      - -Dlibusb=enabled
-#      - -Dusb_redir=enabled
-#      - -Dsdl=enabled
-#      - -Dspice=enabled
-#    override-build: |
-#      $CRAFT_PART_SRC/configure --disable-werror
-#      craftctl default
+    plugin: nil
+    override-build: |
+      cd ..
+      rm -rf $CRAFT_PART_BUILD
+      mkdir -p $CRAFT_PART_BUILD
+      cd $CRAFT_PART_BUILD
+      cp -a $CRAFT_PART_SRC/* $CRAFT_PART_BUILD/
+      $CRAFT_PROJECT_DIR/parse_env.py
+      cp /usr/include/linux/userfaultfd.h ./include/qemu/
+      ./configure --prefix=/usr --target-list=x86_64-softmmu,aarch64-softmmu,arm-softmmu --audio-drv-list=pa,sdl --enable-libusb --enable-usb-redir --enable-sdl --enable-spice --disable-werror
+      cd build
+      make -j8
+      make DESTDIR=$CRAFT_PART_INSTALL install
     build-packages:
       - bison
       - flex
@@ -401,7 +383,6 @@ parts:
       - libcurl4-gnutls-dev
       - libgtk-3-dev
       - libibverbs-dev
-      - libjemalloc-dev
       - libjpeg8-dev
       - libncurses5-dev
       - libnuma-dev
@@ -442,7 +423,6 @@ parts:
       - libbrlapi0.8
       - libflac8
       - libiscsi7
-      - libjemalloc2
       - libnfs13
       - libnuma1
       - librados2
