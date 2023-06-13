@@ -304,8 +304,7 @@ parts:
       rm -f $CRAFT_PRIME/usr/lib/x86_64-linux-gnu/libva-x11.so.2
       for snap in "core22" "gtk-common-themes" "gnome-42-2204"; do
         cd "/snap/$snap/current"
-        find . -type f,l -name *.so.* -exec rm -f "$CRAFT_PRIME/{}" \;
-        find . -type f,l -name *.so -exec rm -f "$CRAFT_PRIME/{}" \;
+        find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" \;
       done
 
   libvirt:
@@ -360,7 +359,6 @@ parts:
       - -Dwayland-protocols=enabled
       - -Dintrospection=enabled
     override-build: |
-      $CRAFT_PROJECT_DIR/parse_env.py
       python3 -m pip install six pyparsing asciidoc
       craftctl default
 
@@ -425,9 +423,6 @@ parts:
       - --prefix=/usr
       - --buildtype=release
       - -Ddistributor_name=Ubuntu
-    override-build: |
-      $CRAFT_PROJECT_DIR/parse_env.py
-      craftctl default
     override-pull: |
       craftctl default
       craftctl set version=$(git describe --tags --abbrev=10)
@@ -482,7 +477,6 @@ parts:
       mkdir -p $CRAFT_PART_BUILD
       cd $CRAFT_PART_BUILD
       cp -a $CRAFT_PART_SRC/* $CRAFT_PART_BUILD/
-      $CRAFT_PROJECT_DIR/parse_env.py
       cp /usr/include/linux/userfaultfd.h ./include/qemu/
       ./configure --prefix=/usr --target-list=x86_64-softmmu,aarch64-softmmu,arm-softmmu --audio-drv-list=pa,sdl --enable-libusb --enable-usb-redir --enable-sdl --enable-spice --disable-werror
       cd build
