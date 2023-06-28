@@ -5,6 +5,8 @@ confinement: strict
 base: core22
 
 layout:
+  /usr/bin/kvm:
+    symlink: $SNAP/usr/bin/qemu-system-x86_64
   /etc/mdevctl.d:
     bind: $SNAP/etc/mdevctl.d
   /usr/share/gnome-boxes:
@@ -37,10 +39,12 @@ layout:
     bind: $SNAP/usr/share/qemu
   /etc/libvirt:
     bind: $SNAP/etc/libvirt
-  /usr/libexec/libvirt_iohelper:
-    bind-file: $SNAP/usr/libexec/libvirt_iohelper
+  /usr/libexec:
+    bind: $SNAP/usr/libexec
   /usr/sbin/smbd:
     bind-file: $SNAP/usr/sbin/smbd
+  /usr/lib/$CRAFT_ARCH_TRIPLET/sasl2:
+    symlink: $SNAP/usr/lib/CRAFT_ARCH_TRIPLET/sasl2
 
 slots:
   # for GtkApplication registration
@@ -83,6 +87,7 @@ apps:
       GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
       GTK_USE_PORTAL: '0'
       LIBVIRT_DEFAULT_URI: 'qemu+unix:///session'
+      PYTHONPATH: $SNAP/usr/share/virt-manager:$SNAP/gnome-platform/usr/lib/python3/dist-packages:$SNAP/gnome-platform/usr/lib/python3.10:/usr/lib/python3.10:/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages
 
   qemu-x86-virgil:
     extensions: [gnome]
@@ -103,11 +108,25 @@ apps:
       - unity7
     environment:
       LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/lib/$CRAFT_ARCH_TRIPLET:$SNAP/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/ceph
+      PYTHONPATH: $SNAP/usr/share/virt-manager:$SNAP/gnome-platform/usr/lib/python3/dist-packages:$SNAP/gnome-platform/usr/lib/python3.10:/usr/lib/python3.10:/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages
 
 
 parts:
-  libraries:
+  snapbuildtools:
+    source: https://github.com/sergio-costas/snap-build-tools.git
+    source-depth: 1
     plugin: nil
+    override-pull: |
+      craftctl default
+      $CRAFT_PART_SRC/install
+
+  libraries:
+    after: [ snapbuildtools ]
+    plugin: nil
+    build-snaps: [core22, gtk-common-themes, gnome-42-2204]
+    override-build: |
+      $CRAFT_PROJECT_DIR/snapbuildtools/remove_common.py core22 gtk-common-themes gnome-42-2204
+      craftctl default
     build-packages:
       - bison
       - flex
@@ -116,6 +135,7 @@ parts:
       - libbluetooth-dev
       - libbrlapi-dev
       - libbz2-dev
+      - libcacard-dev
       - libcap-dev
       - libcap-ng-dev
       - libcurl4-gnutls-dev
@@ -295,36 +315,29 @@ parts:
       - libxml2
       - libyajl2
       - samba
-  # Find files provided by the base and platform snap and ensure they aren't
-  # duplicated in this snap
-    build-snaps: [core22, gtk-common-themes, gnome-42-2204]
-    override-prime: |
-      set -eux
-      craftctl default
-      rm -f $CRAFT_PRIME/usr/lib/x86_64-linux-gnu/libva-x11.so.2
-      for snap in "core22" "gtk-common-themes" "gnome-42-2204"; do
-        cd "/snap/$snap/current"
-        find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" \;
-      done
+
 
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
-    after: [ qemu, libraries, libraries ]
+    after: [ qemu, libraries ]
     source-tag: 'v9.4.0'
     source-depth: 1
     plugin: meson
     build-environment:
       - CFLAGS: "-Wno-error"
+    build-packages:
+      - python3-pkg-resources
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
       - -Dexpensive_tests=disabled
-#    override-build: |
-#      git apply $CRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
-#      mkdir build && cd build
-#      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
-#      make
-#      DESTDIR=$CRAFT_PART_INSTALL make install
+      - -Ddriver_qemu=enabled
+    override-pull: |
+      craftctl default
+      git apply $CRAFT_PROJECT_DIR/patches/libvirt-chown.patch
+    override-stage: |
+      craftctl default
+      sed -i "s#=/usr#=\${prefix}#g" $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libvirt.pc
 
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
@@ -335,6 +348,32 @@ parts:
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
+      - -Dtests=disabled
+      - -Ddocs=disabled
+      - -Dintrospection=enabled
+      - -Dvapi=enabled
+
+  libvirt-python:
+    source: https://files.pythonhosted.org/packages/05/d7/dc92a635cea5038021f183927860cdea7056b66c85739e272526975acceb/libvirt-python-9.4.0.tar.gz
+    plugin: python
+    after: [libvirt-glib]
+    build-environment:
+      - PYTHONPATH: ${PYTHONPATH:+$PYTHONPATH:}/snap/core22/current/usr/lib/python3.10:/snap/core22/current/usr/lib/python3/dist-packages:/snap/core22/current/usr/lib/x86_64-linux-gnu/gobject-introspection
+    build-packages:
+      - libpython3.10-dev
+    override-build: |
+      ./setup.py install --prefix=/usr --root=$CRAFT_PART_INSTALL
+
+  virtmanager:
+    source: https://github.com/virt-manager/virt-manager.git
+    after: [libvirt-python]
+    source-tag: 'v4.1.0'
+    source-depth: 1
+    plugin: nil
+    build-environment:
+      - PYTHONPATH: ${PYTHONPATH:+$PYTHONPATH:}/snap/core22/current/usr/lib/python3.10:/snap/core22/current/usr/lib/python3/dist-packages:/snap/core22/current/usr/lib/x86_64-linux-gnu/gobject-introspection
+    override-build: |
+      ./setup.py install --prefix=/usr --root=$CRAFT_PART_INSTALL
 
   spice-protocol:
     source: https://gitlab.freedesktop.org/spice/spice-protocol.git
@@ -431,6 +470,7 @@ parts:
       git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
       # Update recommended downloads
       # git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
+      git apply  $CRAFT_PROJECT_DIR/patches/work-without-kvm.patch
     build-environment:
       - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0:$CRAFT_STAGE/usr/include/libosinfo-1.0
       - LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
@@ -449,7 +489,7 @@ parts:
       - -Dgtk_doc=disabled
 
   virgl:
-    after: [ libraries, libraries ]
+    after: [ libraries ]
     source: https://gitlab.freedesktop.org/virgl/virglrenderer.git
     source-tag: '0.10.4'
     source-depth: 1
@@ -459,16 +499,16 @@ parts:
       - --buildtype=release
 
   qemu:
-    after: [ virgl, spice-server ]
+    after: [ virgl, spice-server, libraries ]
     source: https://gitlab.com/qemu-project/qemu.git
-    source-tag: 'v6.0.0'
+    source-tag: 'v6.1.1'
     # version 8 added use of USERFAULTFD_IOC_NEW kernel interface, which isn't
     # available in ubuntu < 23.04.
     # version 7.2.2 use KVM_CAP_X86_TRIPLE_FAULT_EVENT, which is also quite recent.
     # version 7.0.0 requires KVM_GET_XSAVE2, which is also quite recent.
 # ext:updatesnap
 #   version-format:
-#     lower-than: 6.1.0
+#     lower-than: 7.0.0
     source-depth: 1
     plugin: nil
     override-build: |
@@ -478,7 +518,7 @@ parts:
       cd $CRAFT_PART_BUILD
       cp -a $CRAFT_PART_SRC/* $CRAFT_PART_BUILD/
       cp /usr/include/linux/userfaultfd.h ./include/qemu/
-      ./configure --prefix=/usr --target-list=x86_64-softmmu,aarch64-softmmu,arm-softmmu --audio-drv-list=pa,sdl --enable-libusb --enable-usb-redir --enable-sdl --enable-spice --disable-werror
+      ./configure --prefix=/usr --target-list=x86_64-softmmu,aarch64-softmmu,arm-softmmu,x86_64-linux-user --enable-smartcard --cpu=x86_64 --disable-xen --enable-user --enable-system --enable-linux-user --enable-kvm --audio-drv-list=pa,sdl --enable-libusb --enable-usb-redir --enable-sdl --enable-spice --disable-werror
       cd build
       make -j8
       make DESTDIR=$CRAFT_PART_INSTALL install
@@ -525,3 +565,11 @@ parts:
     source: scripts
     organize:
       launcher.sh: bin/launcher
+
+  cleanup:
+    plugin: nil
+    after: [ launcher, qemu, libraries, gnome-boxes, virtmanager ]
+    override-prime: |
+      craftctl default
+      $CRAFT_PROJECT_DIR/snapbuildtools/set_python_runtime.py $CRAFT_PRIME
+      glib-compile-schemas $CRAFT_PRIME/usr/share/glib-2.0/schemas
