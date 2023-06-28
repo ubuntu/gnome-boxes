@@ -85,7 +85,7 @@ apps:
     environment:
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes
       GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
-      GTK_USE_PORTAL: '0'
+      GTK_USE_PORTAL: '1'
       LIBVIRT_DEFAULT_URI: 'qemu+unix:///session'
       PYTHONPATH: $SNAP/usr/share/virt-manager:$SNAP/gnome-platform/usr/lib/python3/dist-packages:$SNAP/gnome-platform/usr/lib/python3.10:/usr/lib/python3.10:/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages
 
