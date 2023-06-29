@@ -119,6 +119,9 @@ parts:
     override-pull: |
       craftctl default
       $CRAFT_PART_SRC/install
+# ext:updatesnap
+#   version-format:
+#     allow-neither-tag-nor-branch: true
 
   libraries:
     after: [ snapbuildtools ]
@@ -363,6 +366,9 @@ parts:
       - libpython3.10-dev
     override-build: |
       ./setup.py install --prefix=/usr --root=$CRAFT_PART_INSTALL
+# ext:updatesnap
+#   version-format:
+#     ignore: true
 
   virtmanager:
     source: https://github.com/virt-manager/virt-manager.git
@@ -389,6 +395,9 @@ parts:
     after: [ libphodav, spice-protocol, libraries ]
     source: https://gitlab.freedesktop.org/spice/spice-gtk.git
     source-tag: 'v0.42'
+# ext:updatesnap
+#   version-format:
+#     format: "v%M.%m"
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -482,6 +491,9 @@ parts:
     source: https://gitlab.gnome.org/GNOME/phodav.git
     source-tag: 'v3.0'
     source-depth: 1
+# ext:updatesnap
+#   version-format:
+#     format: "v%M.%m"
     plugin: meson
     meson-parameters:
       - --prefix=/usr
@@ -530,8 +542,14 @@ parts:
     override-build: |
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
       cp -av runner $SNAPCRAFT_PART_INSTALL/bin/
+# ext:updatesnap
+#   version-format:
+#     ignore: true
 
   smbd:
+# ext:updatesnap
+#   version-format:
+#     ignore: true
     after: [ runner ]
     plugin: nil
     prime:
@@ -560,6 +578,9 @@ parts:
       - usr/sbin/smbd
 
   launcher:
+# ext:updatesnap
+#   version-format:
+#     ignore: true
     plugin: dump
     after: [ qemu, libraries ]
     source: scripts
@@ -567,6 +588,9 @@ parts:
       launcher.sh: bin/launcher
 
   cleanup:
+# ext:updatesnap
+#   version-format:
+#     ignore: true
     plugin: nil
     after: [ launcher, qemu, libraries, gnome-boxes, virtmanager ]
     override-prime: |
