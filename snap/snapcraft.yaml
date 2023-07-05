@@ -2,7 +2,7 @@ name: gnome-boxes
 adopt-info: gnome-boxes
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict
-base: core20
+base: core22
 
 layout:
   /usr/share/gnome-boxes:
@@ -13,8 +13,8 @@ layout:
     symlink: $SNAP/usr/share/misc/usb.ids
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libvirt
+  /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
+    bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/libvirt
   /usr/share/libvirt:
     bind: $SNAP/usr/share/libvirt
   /usr/lib/libvirt:
@@ -45,7 +45,7 @@ apps:
   gnome-boxes:
     command: usr/bin/gnome-boxes
     command-chain: [ bin/launcher ]
-    extensions: [gnome-3-38]
+    extensions: [gnome]
     plugs:
       - audio-record
       - audio-playback
@@ -67,15 +67,16 @@ apps:
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
     environment:
-      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes
-      GI_TYPELIB_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0:$GI_TYPELIB_PATH
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes
+      GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}
       GTK_USE_PORTAL: '0'
+      LIBVIRT_DEFAULT_URI: 'qemu+unix:///session'
 
 parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
     source-depth: 1
-    source-branch: v6.0.0
+    source-tag: "v6.0.0"
     plugin: autotools
     build-packages:
       - libxml2-dev
@@ -116,6 +117,7 @@ parts:
       - python3-docutils
       - qemu-system-common
       - xsltproc
+      - libxslt1-dev
     stage-packages:
       - libacl1
       - libapparmor1
@@ -145,12 +147,12 @@ parts:
       - libtirpc3
       - libudev1
       - libxencall1
-      - libxenmisc4.11
+      - libxenmisc4.16
       - libxendevicemodel1
       - libxenevtchn1
       - libxenforeignmemory1
       - libxengnttab1
-      - libxenstore3.0
+      - libxenstore4
       - libxentoolcore1
       - libxentoollog1
       - libxml2
@@ -158,17 +160,19 @@ parts:
     build-environment:
       - CFLAGS: "-Wno-error"
     override-build: |
-      git apply $SNAPCRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
+      git apply $CRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
       mkdir build && cd build
       ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
+      sed -i "s# docs # #g" Makefile
       make
-      DESTDIR=$SNAPCRAFT_PART_INSTALL make install
+      DESTDIR=$CRAFT_PART_INSTALL make install
     prime:
       - -usr/include
       - -usr/lib/pkgconfig
 
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
+    source-tag: "v4.0.0"
     after: [ libvirt ]
     source-depth: 1
     plugin: meson
@@ -180,27 +184,11 @@ parts:
     prime:
       - usr/lib/*/*.so.*
 
-  libhandy:
-    source: https://gitlab.gnome.org/GNOME/libhandy.git
-    source-tag: '1.8.2'
-    source-depth: 1
-    plugin: meson
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-      - -Dgtk_doc=false
-      - -Dtests=false
-      - -Dexamples=false
-      - -Dglade_catalog=disabled
-    prime:
-      - usr/lib/*/*.so.*
-
   tracker:
     source: https://gitlab.gnome.org/GNOME/tracker.git
-    source-branch: 'tracker-3.3'
+    source-tag: '3.3.3'
     source-depth: 1
     plugin: meson
-    meson-version: 0.61.3
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
@@ -215,43 +203,42 @@ parts:
       - libspice-client-gtk-3.0-dev
     override-pull: |
       set -eux
-      snapcraftctl pull
+      craftctl default
       # disabling man and docs seems to be ignored by meson
       sed -i "s#subdir('docs')##g" meson.build
     prime:
       - usr/lib/*/*.so.*
 
   gnome-boxes:
-    after: [ libvirt-glib, libhandy, tracker ]
+    after: [ libvirt-glib, tracker ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    #source-tag: '42.rc'
-    source-branch: 'gnome-42'
+    source-tag: '42.3'
+    source-depth: 1
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
       - --prefix=/usr
       - -Ddistributor_name=Ubuntu
-    meson-version: 0.60.1
     organize:
       snap/gnome-boxes/current/usr: usr
     build-packages:
       - libarchive-dev
       - libgtk-vnc-2.0-dev
-      - libosinfo-1.0-dev
       - libusb-1.0-0-dev
+      - libosinfo-1.0-dev
       - cmake
     override-pull: |
-      snapcraftctl pull
-      snapcraftctl set-version $(git describe --tags --abbrev=10)
-      sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $SNAPCRAFT_PART_SRC/help/meson.build
+      craftctl default
+      craftctl set version=$(git describe --tags --abbrev=10)
+      sed -i.bak -e "s|symlink_media: true|symlink_media: false|g" $CRAFT_PART_SRC/help/meson.build
       # Ensure we save VMs in $SNAP_USER_COMMON
-      git apply $SNAPCRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
+      git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
       # Update recommended downloads
-      git apply $SNAPCRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
+      #git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
     build-environment:
-      - C_INCLUDE_PATH: $C_INCLUDE_PATH:$SNAPCRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-glib-1.0:$SNAPCRAFT_STAGE/usr/include/libvirt-gobject-1.0
-      - LD_LIBRARY_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET:$LD_LIBRARY_PATH
-      - PKG_CONFIG_PATH: $SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pkgconfig:$PKG_CONFIG_PATH
+      - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0
+      - LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
+      - PKG_CONFIG_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
 
   libraries:
     after: [ gnome-boxes ]
@@ -268,13 +255,14 @@ parts:
       - libheimntlm0-heimdal
       - libhx509-5-heimdal
       - libkrb5-26-heimdal
-      - libldap-2.4-2
+      - libldap-2.5-0
       - libnghttp2-14
       - libnspr4
       - libnss3
       - libnuma1
       - libopus0
       - libosinfo-1.0-0
+      - libosinfo-bin
       - libphodav-2.0-0
       - libroken18-heimdal
       - librtmp1
@@ -288,13 +276,10 @@ parts:
       - libva-x11-2
       - libwind0-heimdal
       - libyajl2
-      - libosinfo-bin
       - pci.ids
       - usb.ids
-
     stage:
       - -usr/share/osinfo
-
     prime:
       - usr/lib/*/libasn*.so.*
       - usr/lib/*/libcaca*.so.*
@@ -335,6 +320,9 @@ parts:
     plugin: make
     after: [ libraries ]
     source: https://salsa.debian.org/libvirt-team/osinfo-db.git
+# ext:updatesnap
+#   version-format:
+#     allow-neither-tag-nor-branch: true
     build-packages:
       - gettext
       - osinfo-db-tools
@@ -351,7 +339,7 @@ parts:
   qemu:
     plugin: nil
     after: [ osinfo-db ]
-    stage-snaps: [ qemu-virgil/latest/edge ]
+    stage-snaps: [ qemu-virgil-tmp-work/latest/edge ]
     stage-packages:
       - dnsmasq-base
 
@@ -362,14 +350,3 @@ parts:
     organize:
       launcher.sh: bin/launcher
 
-  # Find files provided by the base and platform snap and ensure they aren't
-  # duplicated in this snap
-  #cleanup:
-  #  after: [ libraries ]
-  #  plugin: nil
-  #  build-snaps: [core20, gtk-common-themes, gnome-3-38-2004]
-  #  override-prime: |
-  #    set -eux
-  #    for snap in "core20" "gtk-common-themes" "gnome-3-38-2004"; do
-  #      cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
-  #    done
