@@ -76,7 +76,7 @@ parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
     source-depth: 1
-    source-tag: v6.0.0
+    source-tag: "v6.0.0"
     plugin: autotools
     build-packages:
       - libxml2-dev
@@ -172,6 +172,7 @@ parts:
 
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
+    source-tag: "v4.0.0"
     after: [ libvirt ]
     source-depth: 1
     plugin: meson
@@ -277,10 +278,8 @@ parts:
       - libyajl2
       - pci.ids
       - usb.ids
-
     stage:
       - -usr/share/osinfo
-
     prime:
       - usr/lib/*/libasn*.so.*
       - usr/lib/*/libcaca*.so.*
@@ -317,23 +316,6 @@ parts:
       - usr/share/misc/usb.ids
       - var/lib/usbutils/usb.ids
 
-  # osinfo-db:
-  #   after: [ libvirt-glib, tracker ]
-  #   source: https://gitlab.com/libosinfo/libosinfo.git
-  #   source-tag: 'v1.10.0'
-  #   source-depth: 1
-  #   plugin: meson
-  #   override-pull: |
-  #     set -eux
-  #     craftctl default
-  #     git apply $CRAFT_PROJECT_DIR/patches/libosinfo.patch
-  #   meson-parameters:
-  #     - --prefix=/usr
-  #     - --buildtype=release
-  #     - -Denable-gtk-doc=false
-  #     - -Denable-tests=false
-  #     - -Dlibsoup-abi=3.0
-
   osinfo-db:
     plugin: make
     after: [ libraries ]
@@ -365,14 +347,3 @@ parts:
     organize:
       launcher.sh: bin/launcher
 
-  # Find files provided by the base and platform snap and ensure they aren't
-  # duplicated in this snap
-  #cleanup:
-  #  after: [ libraries ]
-  #  plugin: nil
-  #  build-snaps: [core22, gtk-common-themes, gnome-42-2204]
-  #  override-prime: |
-  #    set -eux
-  #    for snap in "core22" "gtk-common-themes" "gnome-42-2204"; do
-  #      cd "/snap/$snap/current" && find . -type f,l -name *.so.* -exec rm -f "$CRAFT_PRIME/{}" \;
-  #    done
