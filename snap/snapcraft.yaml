@@ -339,7 +339,7 @@ parts:
   qemu:
     plugin: nil
     after: [ osinfo-db ]
-    stage-snaps: [ qemu-virgil-tmp-work/latest/edge ]
+    stage-snaps: [ qemu-virgil/latest/edge ]
     stage-packages:
       - dnsmasq-base
 
