@@ -320,6 +320,7 @@ parts:
     plugin: make
     after: [ libraries ]
     source: https://salsa.debian.org/libvirt-team/osinfo-db.git
+    source-depth: 1
 # ext:updatesnap
 #   version-format:
 #     allow-neither-tag-nor-branch: true
