@@ -76,7 +76,7 @@ parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
     source-depth: 1
-    source-tag: "v6.0.0"
+    source-tag: 'v9.5.0'
     plugin: autotools
     build-packages:
       - libxml2-dev
@@ -186,7 +186,7 @@ parts:
 
   tracker:
     source: https://gitlab.gnome.org/GNOME/tracker.git
-    source-tag: '3.3.3'
+    source-tag: '3.5.3'
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -212,7 +212,7 @@ parts:
   gnome-boxes:
     after: [ libvirt-glib, tracker ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '42.3'
+    source-tag: '43.5'
     source-depth: 1
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
@@ -350,4 +350,3 @@ parts:
     source: scripts
     organize:
       launcher.sh: bin/launcher
-
