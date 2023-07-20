@@ -1,19 +1,20 @@
 diff --git a/data/recommended-downloads.xml b/data/recommended-downloads.xml
-index 6502791b..8529b871 100644
+index 6db69931..1930b163 100644
 --- a/data/recommended-downloads.xml
 +++ b/data/recommended-downloads.xml
-@@ -9,14 +9,7 @@
-   available.
+@@ -18,15 +18,8 @@
+   See https://gitlab.gnome.org/GNOME/gnome-boxes/-/wikis/recommended-downloads.xml
   -->
  <list>
--  <os_id>http://redhat.com/rhel/</os_id>
--  <os_id>http://rockylinux.org/rocky/</os_id>
--  <os_id>http://fedoraproject.org/fedora/</os_id>
--  <os_id>http://fedoraproject.org/silverblue/</os_id>
-   <os_id>http://ubuntu.com/ubuntu/</os_id>
--  <os_id>http://opensuse.org/opensuse/15.4</os_id>
--  <os_id>http://opensuse.org/opensuse/tumbleweed</os_id>
-   <os_id>http://debian.org/debian/</os_id>
--  <os_id>http://endlessos.com/eos/</os_id>
-   <os_id>http://gnome.org/gnome/nightly</os_id>
- </list>
+-  <os id="http://redhat.com/rhel/"/>
+-  <os id="http://rockylinux.org/rocky/"/>
+-  <os id="http://fedoraproject.org/fedora/"/>
+-  <os id="http://fedoraproject.org/silverblue/"/>
+   <os id="http://ubuntu.com/ubuntu/"/>
+-  <os id="http://opensuse.org/opensuse/15.4"/>
+-  <os id="http://opensuse.org/opensuse/tumbleweed"/>
+   <os id="http://debian.org/debian/"/>
+-  <os id="http://endlessos.com/eos/"/>
+   <os id="http://gnome.org/gnome/nightly">
+     <title>GNOME OS Nightly</title>
+     <subtitle>The GNOME Project</subtitle>

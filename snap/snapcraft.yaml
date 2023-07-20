@@ -222,14 +222,71 @@ parts:
     prime:
       - usr/lib/*/*.so.*
 
+  libosinfo:
+    source: https://gitlab.com/libosinfo/libosinfo.git
+    source-tag: 'v1.10.0'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - -Denable-gtk-doc=false
+      - -Denable-tests=false
+      - -Dlibsoup-abi=3.0
+    override-pull: |
+      craftctl default
+      git apply $CRAFT_PROJECT_DIR/patches/libosinfo.patch
+    override-build: |
+      craftctl default
+      sed -i "s#includedir=/usr/include#includedir=$CRAFT_STAGE/usr/include#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
+      sed -i "s#libdir=/usr/lib#libdir=$CRAFT_STAGE/usr/lib#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
+
+  libphodav:
+    source: https://github.com/GNOME/phodav.git
+    source-tag: 'v3.0'
+    source-depth: 1
+    plugin: meson
+    meson-parameters:
+      - --prefix=/usr
+      - -Dgtk_doc=disabled
+
+  libspice-protocol:
+    source: https://gitlab.freedesktop.org/spice/spice-protocol.git
+    source-tag: 'v0.14.4'
+    source-depth: 1
+    plugin: meson
+    after: [ libphodav ]
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+
+  libspice-gtk:
+    after: [ libspice-protocol ]
+    source: https://gitlab.freedesktop.org/spice/spice-gtk.git
+    source-tag: 'v0.42'
+    source-depth: 1
+    plugin: meson
+    override-build: |
+      python3 -m pip install six pyparsing asciidoc
+      craftctl default
+    meson-parameters:
+      - --prefix=/usr
+      - -Dgtk=enabled
+      - -Dwayland-protocols=enabled
+      - -Dintrospection=enabled
+      - -Dgtk_doc=disabled
+    build-packages:
+      - libopus-dev
+      - libgstreamer1.0-dev
+      - libgstreamer-plugins-base1.0-dev
+
   gnome-boxes:
-    after: [ libvirt-glib, tracker ]
+    after: [ libspice-gtk, libvirt-glib, tracker, libosinfo ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '42.3'
+    source-tag: '44.2'
     source-depth: 1
 # ext:updatesnap
 #   version-format:
-#     lower-than: 43.0
+#     lower-than: 45.0
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
@@ -241,7 +298,6 @@ parts:
       - libarchive-dev
       - libgtk-vnc-2.0-dev
       - libusb-1.0-0-dev
-      - libosinfo-1.0-dev
       - cmake
     override-pull: |
       craftctl default
@@ -250,7 +306,7 @@ parts:
       # Ensure we save VMs in $SNAP_USER_COMMON
       git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-user-common.patch
       # Update recommended downloads
-      #git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
+      git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
     build-environment:
       - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0
       - LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
@@ -277,14 +333,10 @@ parts:
       - libnss3
       - libnuma1
       - libopus0
-      - libosinfo-1.0-0
-      - libosinfo-bin
       - libphodav-2.0-0
       - libroken18-heimdal
       - librtmp1
       - libsasl2-2
-      - libspice-client-glib-2.0-8
-      - libspice-client-gtk-3.0-5
       - libssh-4
       - libusb-1.0-0
       - libusbredirhost1
@@ -294,8 +346,6 @@ parts:
       - libyajl2
       - pci.ids
       - usb.ids
-    stage:
-      - -usr/share/osinfo
     prime:
       - usr/lib/*/libasn*.so.*
       - usr/lib/*/libcaca*.so.*
@@ -313,7 +363,6 @@ parts:
       - usr/lib/*/libns*.so*
       - usr/lib/*/libnuma*.so.*
       - usr/lib/*/libopus*.so.*
-      - usr/lib/*/libosinfo*.so.*
       - usr/lib/*/libphodav*.so.*
       - usr/lib/*/libplc*.so*
       - usr/lib/*/libpld*.so*
@@ -333,13 +382,14 @@ parts:
       - var/lib/usbutils/usb.ids
 
   osinfo-db:
-    plugin: make
     after: [ libraries ]
     source: https://salsa.debian.org/libvirt-team/osinfo-db.git
     source-depth: 1
+    source-tag: "upstream/0.20230518"
 # ext:updatesnap
 #   version-format:
-#     allow-neither-tag-nor-branch: true
+#     format: "upstream/%M.%m"
+    plugin: make
     build-packages:
       - gettext
       - osinfo-db-tools
