@@ -15,6 +15,8 @@ layout:
     symlink: $SNAP/usr/share/misc/usb.ids
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
+  /usr/share/libosinfo/pci.ids:
+    symlink: $SNAP/usr/share/libosinfo/pci.ids
   /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
     bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/libvirt
   /usr/share/libvirt:
