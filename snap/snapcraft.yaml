@@ -175,6 +175,12 @@ parts:
       sed -i "s# docs # #g" Makefile
       make
       DESTDIR=$CRAFT_PART_INSTALL make install
+    stage:
+      - -usr/lib/*/ceph/libceph-common.so.* # conflicts with qemu part
+      - -usr/lib/*/ceph/librbd/libceph_librbd_parent_cache.so.* # conflicts with qemu part
+      - -usr/lib/*/ceph/librbd/libceph_librbd_pwl_cache.so.* # conflicts with qemu part
+      - -usr/lib/*/librados.so.* # conflicts with qemu part
+      - -usr/lib/*/librbd.so.* # conflicts with qemu part
     prime:
       - -usr/include
       - -usr/lib/pkgconfig
