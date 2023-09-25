@@ -294,7 +294,7 @@ parts:
     source-depth: 1
 # ext:updatesnap
 #   version-format:
-#     lower-than: 45.0
+#     lower-than: 46.0
     parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
     plugin: meson
     meson-parameters:
