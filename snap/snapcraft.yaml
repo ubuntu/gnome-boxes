@@ -181,6 +181,11 @@ parts:
       - -usr/lib/*/ceph/librbd/libceph_librbd_pwl_cache.so.* # conflicts with qemu part
       - -usr/lib/*/librados.so.* # conflicts with qemu part
       - -usr/lib/*/librbd.so.* # conflicts with qemu part
+      - -usr/lib/*/libgfapi.so.* # conflicts with qemu part
+      - -usr/lib/*/libgfrpc.so.* # conflicts with qemu part
+      - -usr/lib/*/libgfxdr.so.* # conflicts with qemu part
+      - -usr/lib/*/libglusterfs.so.* # conflicts with qemu part
+      - -usr/lib/*/libyajl.so.* # conflicts with qemu part
     prime:
       - -usr/include
       - -usr/lib/pkgconfig
@@ -249,7 +254,7 @@ parts:
       sed -i "s#libdir=/usr/lib#libdir=$CRAFT_STAGE/usr/lib#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
 
   libphodav:
-    source: https://github.com/GNOME/phodav.git
+    source: https://gitlab.gnome.org/GNOME/phodav.git
     source-tag: 'v3.0'
     source-depth: 1
     plugin: meson
@@ -290,7 +295,7 @@ parts:
   gnome-boxes:
     after: [ libspice-gtk, libvirt-glib, tracker, libosinfo ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '44.2'
+    source-tag: '45.0'
     source-depth: 1
 # ext:updatesnap
 #   version-format:
@@ -351,7 +356,6 @@ parts:
       - libusbredirparser1
       - libva-x11-2
       - libwind0-heimdal
-      - libyajl2
       - pci.ids
       - usb.ids
     prime:
@@ -383,7 +387,6 @@ parts:
       - lib/*/libusb*.so.*
       - usr/lib/*/libva*.so.*
       - usr/lib/*/libwind*.so.*
-      - usr/lib/*/libyaj*.so.*
       - usr/bin/osinfo*
       - usr/share/misc/pci.ids
       - usr/share/misc/usb.ids
@@ -393,7 +396,7 @@ parts:
     after: [ libraries ]
     source: https://salsa.debian.org/libvirt-team/osinfo-db.git
     source-depth: 1
-    source-tag: "upstream/0.20230518"
+    source-tag: "upstream/0.20231215"
 # ext:updatesnap
 #   version-format:
 #     format: "upstream/%M.%m"

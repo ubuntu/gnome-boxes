@@ -42,7 +42,7 @@
 
     <media arch="x86_64">
       <variant id="daily"/>
-      <url>http://cdimage.ubuntu.com/daily-live/current/kinetic-desktop-amd64.iso</url>
+      <url>http://cdimage.ubuntu.com/daily-live/current/noble-desktop-amd64.iso</url>
       <iso>
         <volume-id>Ubuntu-Daily-x86_64</volume-id>
       </iso>
