@@ -202,8 +202,6 @@ parts:
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
-    build-packages:
-      - libvirt-dev
     prime:
       - usr/lib/*/*.so.*
 
