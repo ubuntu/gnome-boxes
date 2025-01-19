@@ -267,7 +267,6 @@ parts:
     source-tag: 'v0.14.4'
     source-depth: 1
     plugin: meson
-    after: [ libphodav ]
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
