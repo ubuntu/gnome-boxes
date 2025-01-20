@@ -61,6 +61,8 @@ layout:
     symlink: $SNAP/usr/sbin/virtxend
   /usr/sbin/dnsmasq:
     bind-file: $SNAP/usr/sbin/dnsmasq
+  /usr/libexec/spice-client-glib-usb-acl-helper:
+    symlink: $SNAP/usr/libexec/spice-client-glib-usb-acl-helper
   /usr/share/qemu:
     bind: $SNAP/usr/share/qemu
   /etc/libvirt:
@@ -330,10 +332,28 @@ parts:
       - -Dwayland-protocols=enabled
       - -Dintrospection=enabled
       - -Dgtk_doc=disabled
+      - -Dsmartcard=enabled
+      - -Dusbredir=enabled
+      - -Dpolkit=enabled
+      - -Dlz4=enabled
+      - -Dusb-acl-helper-dir=/usr/libexec
+      - -Dusb-ids-path=/usr/share/misc/usb.ids
     build-packages:
-      - libopus-dev
-      - libgstreamer1.0-dev
+      - libcacard-dev
       - libgstreamer-plugins-base1.0-dev
+      - libgstreamer1.0-dev
+      - libopus-dev
+      - libphodav-3.0-dev
+      - libusb-1.0-0-dev
+      - libusbredirhost-dev
+      - libusbredirparser-dev
+      - libva-dev
+    stage-packages:
+      - libopus0
+      - libphodav-3.0-0
+      - libva-x11-2
+      - libva-wayland2
+      - usb.ids
     prime:
       - -usr/include
       - -usr/lib/*/pkgconfig
@@ -385,14 +405,10 @@ parts:
       - libnghttp2-14
       - libnspr4
       - libnss3
-      - libopus0
-      - libphodav-3.0-0
       - librtmp1
       - libsasl2-2
       - libssh-4
-      - libva-x11-2
       - pci.ids
-      - usb.ids
     prime:
       - usr/lib/*/libcaca*.so.*
       - usr/lib/*/libcurl*.so.*
