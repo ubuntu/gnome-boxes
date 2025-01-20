@@ -1,8 +1,8 @@
 #! /bin/sh
 
 cleanup() {
-    [ -e /tmp/libvirt.pid ] && pkill -F /tmp/libvirt.pid
-    [ -e /tmp/virtlogd.pid ] && pkill -F /tmp/virtlogd.pid
+    [ -e "$XDG_RUNTIME_DIR"/libvirt.pid ] && pkill -F "$XDG_RUNTIME_DIR"/libvirt.pid
+    [ -e "$XDG_RUNTIME_DIR"/virtlogd.pid ] && pkill -F "$XDG_RUNTIME_DIR"/virtlogd.pid
 }
 
 trap 'cleanup' EXIT HUP INT QUIT TERM
@@ -14,9 +14,9 @@ export PATH="/usr/bin:$PATH"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAP_LAUNCHER_ARCH_TRIPLET/ceph:$SNAP/usr/lib:$SNAP/lib:$SNAP/lib/$SNAP_LAUNCHER_ARCH_TRIPLET:$SNAP/usr/lib/$SNAP_LAUNCHER_ARCH_TRIPLET"
 
 echo Launching libvirtd
-libvirtd -d -p /tmp/libvirt.pid
+libvirtd -d -p "$XDG_RUNTIME_DIR"/libvirt.pid
 
 echo Launching virtlogd
-virtlogd -d -p /tmp/virtlogd.pid
+virtlogd -d -p "$XDG_RUNTIME_DIR"/virtlogd.pid
 
 "$@"
