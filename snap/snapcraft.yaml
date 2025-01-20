@@ -331,12 +331,12 @@ parts:
   gnome-boxes:
     after: [ libspice-gtk, libvirt-glib, tracker, libosinfo ]
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '45.0'
+    source-tag: '47.0'
     source-depth: 1
 # ext:updatesnap
 #   version-format:
-#     lower-than: 46.0
-    parse-info: [usr/share/metainfo/org.gnome.Boxes.appdata.xml]
+#     lower-than: 48.0
+    parse-info: [usr/share/metainfo/org.gnome.Boxes.metainfo.xml]
     plugin: meson
     meson-parameters:
       - --prefix=/usr
