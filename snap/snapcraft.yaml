@@ -259,34 +259,6 @@ parts:
     prime:
       - usr/lib/*/*.so.*
 
-  tracker:
-    source: https://gitlab.gnome.org/GNOME/tracker.git
-    source-tag: '3.3.3'
-# ext:updatesnap
-#   version-format:
-#     lower-than: 3.4.0
-    source-depth: 1
-    plugin: meson
-    meson-parameters:
-      - --prefix=/usr
-      - --buildtype=release
-      - -Ddocs=false
-      - -Dman=false
-      - -Dbash_completion=false
-      - -Dsystemd_user_services=false
-      - -Dtest_utils=false
-      - -Dintrospection=disabled
-    build-packages:
-      - asciidoc
-      - libspice-client-gtk-3.0-dev
-    override-pull: |
-      set -eux
-      craftctl default
-      # disabling man and docs seems to be ignored by meson
-      sed -i "s#subdir('docs')##g" meson.build
-    prime:
-      - usr/lib/*/*.so.*
-
   libosinfo:
     source: https://gitlab.com/libosinfo/libosinfo.git
     source-tag: 'v1.12.0'
@@ -361,7 +333,10 @@ parts:
       - -usr/lib/*/pkgconfig
 
   gnome-boxes:
-    after: [ libspice-gtk, libvirt-glib, tracker, libosinfo ]
+    after:
+      - libspice-gtk
+      - libvirt-glib
+      - libosinfo
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
     source-tag: '47.0'
     source-depth: 1
