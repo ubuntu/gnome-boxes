@@ -286,7 +286,7 @@ parts:
 
   libosinfo:
     source: https://gitlab.com/libosinfo/libosinfo.git
-    source-tag: 'v1.11.0'
+    source-tag: 'v1.12.0'
     source-depth: 1
     plugin: meson
     meson-parameters:
