@@ -312,6 +312,9 @@ parts:
       - -Dlz4=enabled
       - -Dusb-acl-helper-dir=/usr/libexec
       - -Dusb-ids-path=/usr/share/misc/usb.ids
+      - -Dwebdav=enabled
+      - -Dvapi=enabled
+      - -Degl=enabled
     build-packages:
       - libcacard-dev
       - libgstreamer-plugins-base1.0-dev
