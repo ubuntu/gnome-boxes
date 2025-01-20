@@ -438,6 +438,8 @@ parts:
       # fix broken focal revision
       FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
       sed -i "s/20.04.3/$FOCAL/" $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
+    prime:
+      - usr/share/osinfo
 
   qemu:
     plugin: nil
