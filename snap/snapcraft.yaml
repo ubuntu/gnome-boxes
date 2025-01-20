@@ -323,9 +323,10 @@ parts:
     source-tag: 'v0.42'
     source-depth: 1
     plugin: meson
-    override-build: |
+    override-pull: |
       python3 -m pip install --break-system-packages six pyparsing asciidoc
       craftctl default
+      git apply -3 $CRAFT_PROJECT_DIR/patches/libspice-gtk-permissions-error-explain.patch
     meson-parameters:
       - --prefix=/usr
       - -Dgtk=enabled

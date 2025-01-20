@@ -1,0 +1,23 @@
+diff --git a/src/spice-client-glib-usb-acl-helper.c b/src/spice-client-glib-usb-acl-helper.c
+index 17113e6..53622b5 100644
+--- a/src/spice-client-glib-usb-acl-helper.c
++++ b/src/spice-client-glib-usb-acl-helper.c
+@@ -194,9 +194,16 @@ static void check_authorization_cb(PolkitAuthority *authority,
+         FATAL_ERROR("%s is not a character device\n", path);
+         return;
+     }
++    if (access(path, W_OK) != 0 || access(path, R_OK) != 0) {
++        g_autofree char *summary = NULL;
++        g_autofree char *message = NULL;
+ 
+-    if (set_facl(path, getuid(), 1)) {
+-        FATAL_ERROR("setting facl: %s\n", strerror(errno));
++        summary = g_strdup_printf("User has no permissions on %s", path);
++        message = g_strdup_printf("Launch the command `sudo setfacl -m u:%s:rw %s` from the host to "
++                                  "give your user readwrite permissions on such device",
++                                  g_get_user_name(), path);
++
++        FATAL_ERROR("%s.\n%s\n", summary, message);
+         return;
+     }
+ 
