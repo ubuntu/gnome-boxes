@@ -1,0 +1,60 @@
+diff --git a/src/spice-display.vala b/src/spice-display.vala
+index 166f428..8db3c09 100644
+--- a/src/spice-display.vala
++++ b/src/spice-display.vala
+@@ -60,6 +60,8 @@ private string get_box_name () {
+                 var box_name = get_box_name ();
+                 got_error (_("Redirection of USB device “%s” for “%s” failed").printf (device_description, box_name));
+                 debug ("Error connecting %s to %s: %s", device_description, box_name, err.message);
++
++                show_usb_access_dialog (dev);
+             });
+         } catch (GLib.Error error) {
+         }
+@@ -455,6 +457,8 @@ public GLib.ListStore get_usb_devices_model () {
+                         debug ("Error connecting %s to %s: %s",
+                                device_desc,
+                                box_name, err.message);
++
++                        show_usb_access_dialog (dev);
+                     }
+                 });
+             });
+@@ -465,6 +469,37 @@ public GLib.ListStore get_usb_devices_model () {
+         return model;
+     }
+ 
++    private void show_usb_access_dialog (Spice.UsbDevice dev) {
++        var libusb_dev = (LibUSB.Device) dev.get_libusb_device ();
++        var dev_path = "/dev/bus/usb/%03u/%03d".printf (libusb_dev.get_bus_number (),
++            libusb_dev.get_device_address());
++
++        if (Posix.access (dev_path, Posix.R_OK | Posix.W_OK) == 0)
++            return;
++
++        var device_desc = dev.get_description ("%1$s %2$s");
++        var dialog = new Gtk.Dialog.with_buttons ("User has no permissions on %s".printf (device_desc),
++                                                  get_display (0).get_toplevel () as Gtk.Window,
++                                                  Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
++                                                  _("_OK"),
++                                                  Gtk.ResponseType.NONE,
++                                                  null);
++
++        var label = new Gtk.Label(("Launch the command from the host:\n\n" +
++            "  sudo setfacl -m u:%s:rw %s\n\n" +
++            "to give the user readwrite permissions on the device").printf (
++                Environment.get_user_name(), dev_path));
++        label.selectable = true;
++        label.margin_top = 24;
++        label.margin_bottom = 12;
++        label.margin_start = 12;
++        label.margin_end = 24;
++        (dialog.get_content_area () as Gtk.Container).add (label);
++
++        dialog.response.connect(() => dialog.destroy ());
++        dialog.show_all ();
++    }
++
+     private bool is_usb_kbd_or_mouse (uint8 class, uint8 subclass, uint8 protocol) {
+         var ret = false;
+ 
