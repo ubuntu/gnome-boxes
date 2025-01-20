@@ -98,6 +98,7 @@ apps:
       - network-status
       - process-control
       - raw-usb
+      - removable-media
       - system-observe
       - time-control
       - udisks2
