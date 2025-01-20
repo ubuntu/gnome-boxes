@@ -11,7 +11,7 @@ export HOME="/home/$USER/snap/$SNAP_NAME/current"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CONFIG_HOME="$HOME/.config"
 export PATH="/usr/bin:$PATH"
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SNAP/usr/lib/x86_64-linux-gnu/ceph:$SNAP/usr/lib:$SNAP/lib:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAP_LAUNCHER_ARCH_TRIPLET/ceph:$SNAP/usr/lib:$SNAP/lib:$SNAP/lib/$SNAP_LAUNCHER_ARCH_TRIPLET:$SNAP/usr/lib/$SNAP_LAUNCHER_ARCH_TRIPLET"
 
 echo Launching libvirtd
 libvirtd -d -p /tmp/libvirt.pid
