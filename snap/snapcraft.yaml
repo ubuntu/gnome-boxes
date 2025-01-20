@@ -242,7 +242,7 @@ parts:
       - -usr/share/doc/libyajl* # conflicts with qemu part
     prime:
       - -usr/include
-      - -usr/lib/pkgconfig
+      - -usr/lib/*/pkgconfig
 
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
@@ -298,6 +298,9 @@ parts:
       craftctl default
       sed -i "s#includedir=/usr/include#includedir=$CRAFT_STAGE/usr/include#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
       sed -i "s#libdir=/usr/lib#libdir=$CRAFT_STAGE/usr/lib#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
+    prime:
+      - -usr/include
+      - -usr/lib/*/pkgconfig
 
   libspice-protocol:
     source: https://gitlab.freedesktop.org/spice/spice-protocol.git
@@ -307,6 +310,10 @@ parts:
     meson-parameters:
       - --prefix=/usr
       - --buildtype=release
+    prime:
+      - -usr/include
+      - -usr/lib/*/pkgconfig
+      - -usr/share/pkgconfig
 
   libspice-gtk:
     after: [ libspice-protocol ]
@@ -327,6 +334,9 @@ parts:
       - libopus-dev
       - libgstreamer1.0-dev
       - libgstreamer-plugins-base1.0-dev
+    prime:
+      - -usr/include
+      - -usr/lib/*/pkgconfig
 
   gnome-boxes:
     after: [ libspice-gtk, libvirt-glib, tracker, libosinfo ]
@@ -360,6 +370,9 @@ parts:
       - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0
       - LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET
       - PKG_CONFIG_PATH: $CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+    prime:
+      - -usr/include
+      - -usr/lib/*/pkgconfig
 
   libraries:
     after: [ gnome-boxes ]
