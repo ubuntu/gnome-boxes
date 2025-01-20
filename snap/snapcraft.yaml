@@ -411,7 +411,6 @@ parts:
       - usr/share/misc/usb.ids
 
   osinfo-db:
-    after: [ libraries ]
     source: https://salsa.debian.org/libvirt-team/osinfo-db.git
     source-depth: 1
     source-tag: 'upstream/0.20240701'
