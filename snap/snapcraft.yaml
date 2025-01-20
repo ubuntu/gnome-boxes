@@ -246,10 +246,7 @@ parts:
 
   libvirt-glib:
     source: https://github.com/libvirt/libvirt-glib.git
-    source-tag: "v4.0.0"
-# ext:updatesnap
-#   version-format:
-#     lower-than: 5.0.0
+    source-tag: v5.0.0
     after: [ libvirt ]
     source-depth: 1
     plugin: meson
@@ -297,9 +294,6 @@ parts:
       - -Denable-gtk-doc=false
       - -Denable-tests=false
       - -Dlibsoup-abi=3.0
-    override-pull: |
-      craftctl default
-      git apply $CRAFT_PROJECT_DIR/patches/libosinfo.patch
     override-build: |
       craftctl default
       sed -i "s#includedir=/usr/include#includedir=$CRAFT_STAGE/usr/include#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
