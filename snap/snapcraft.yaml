@@ -2,7 +2,7 @@ name: gnome-boxes
 adopt-info: gnome-boxes
 grade: stable # must be 'stable' to release into candidate/stable channels
 confinement: strict
-base: core22
+base: core24
 
 layout:
   /usr/share/OVMF:
@@ -16,7 +16,7 @@ layout:
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
   /usr/share/libosinfo/pci.ids:
-    symlink: $SNAP/usr/share/libosinfo/pci.ids
+    symlink: $SNAP/usr/share/misc/pci.ids
   /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
     bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/libvirt
   /usr/share/libvirt:
@@ -29,6 +29,36 @@ layout:
     bind: $SNAP/usr/lib/ipxe
   /usr/bin/qemu-system-x86_64:
     bind-file: $SNAP/usr/bin/qemu-system-x86_64
+  /usr/sbin/virtchd:
+    symlink: $SNAP/usr/sbin/virtchd
+  /usr/sbin/virtinterfaced:
+    symlink: $SNAP/usr/sbin/virtinterfaced
+  /usr/sbin/virtlockd:
+    symlink: $SNAP/usr/sbin/virtlockd
+  /usr/sbin/virtlogd:
+    symlink: $SNAP/usr/sbin/virtlogd
+  /usr/sbin/virtlxcd:
+    symlink: $SNAP/usr/sbin/virtlxcd
+  /usr/sbin/virtnetworkd:
+    symlink: $SNAP/usr/sbin/virtnetworkd
+  /usr/sbin/virtnodedevd:
+    symlink: $SNAP/usr/sbin/virtnodedevd
+  /usr/sbin/virtnwfilterd:
+    symlink: $SNAP/usr/sbin/virtnwfilterd
+  /usr/sbin/virtproxyd:
+    symlink: $SNAP/usr/sbin/virtproxyd
+  /usr/sbin/virtqemud:
+    symlink: $SNAP/usr/sbin/virtqemud
+  /usr/sbin/virt-sanlock-cleanup:
+    symlink: $SNAP/usr/sbin/virt-sanlock-cleanup
+  /usr/sbin/virtsecretd:
+    symlink: $SNAP/usr/sbin/virtsecretd
+  /usr/sbin/virtstoraged:
+    symlink: $SNAP/usr/sbin/virtstoraged
+  /usr/sbin/virtvboxd:
+    symlink: $SNAP/usr/sbin/virtvboxd
+  /usr/sbin/virtxend:
+    symlink: $SNAP/usr/sbin/virtxend
   /usr/sbin/dnsmasq:
     bind-file: $SNAP/usr/sbin/dnsmasq
   /usr/share/qemu:
@@ -37,6 +67,8 @@ layout:
     bind: $SNAP/etc/libvirt
   /usr/libexec/libvirt_iohelper:
     bind-file: $SNAP/usr/libexec/libvirt_iohelper
+  /var/lib/libvirt:
+    bind: $SNAP/var/lib/libvirt
 
 slots:
   # for GtkApplication registration
@@ -80,11 +112,14 @@ parts:
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
     source-depth: 1
-    source-tag: 'v6.0.0'
-    plugin: autotools
+    source-tag: 'v10.4.0'
+# There's something, starting from 10.5.0 that breaks libvirt to work inside
+# the snap environment, launching `virsh` just hangs and inside boxes no VM
+# is loaded, with an infinite loading spinner.
 # ext:updatesnap
 #   version-format:
-#     lower-than: 6.1.0
+#     lower-than: 10.5.0
+    plugin: meson
     build-packages:
       - libxml2-dev
       - libncurses5-dev
@@ -117,7 +152,7 @@ parts:
       - librbd-dev
       - librados-dev
       - libglusterfs-dev
-      - libwireshark-dev
+      - libtirpc-dev
       - libwiretap-dev
       - libfuse-dev
       - qemu-utils
@@ -154,7 +189,7 @@ parts:
       - libtirpc3
       - libudev1
       - libxencall1
-      - libxenmisc4.16
+      - libxenmisc4.17t64
       - libxendevicemodel1
       - libxenevtchn1
       - libxenforeignmemory1
@@ -169,23 +204,42 @@ parts:
     override-pull: |
       craftctl default
       git apply $CRAFT_PROJECT_DIR/patches/libvirt-qemu.patch
-    override-build: |
-      mkdir build && cd build
-      ../autogen.sh --prefix=/usr --sysconfdir=/etc --localstatedir=/var --with-qemu
-      sed -i "s# docs # #g" Makefile
-      make
-      DESTDIR=$CRAFT_PART_INSTALL make install
+      git apply $CRAFT_PROJECT_DIR/patches/libvirt-CVE-2024-8235.patch
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Ddriver_qemu=enabled
+      - -Ddocs=disabled
+      - -Dtests=disabled
+      - -Dwireshark_dissector=disabled
     stage:
       - -usr/lib/*/ceph/libceph-common.so.* # conflicts with qemu part
       - -usr/lib/*/ceph/librbd/libceph_librbd_parent_cache.so.* # conflicts with qemu part
       - -usr/lib/*/ceph/librbd/libceph_librbd_pwl_cache.so.* # conflicts with qemu part
-      - -usr/lib/*/librados.so.* # conflicts with qemu part
-      - -usr/lib/*/librbd.so.* # conflicts with qemu part
+      - -usr/lib/*/libboost_*.so.* # conflicts with qemu part
+      - -usr/lib/*/libdaxctl.so.* # conflicts with the qemu part
       - -usr/lib/*/libgfapi.so.* # conflicts with qemu part
       - -usr/lib/*/libgfrpc.so.* # conflicts with qemu part
       - -usr/lib/*/libgfxdr.so.* # conflicts with qemu part
       - -usr/lib/*/libglusterfs.so.* # conflicts with qemu part
+      - -usr/lib/*/libibverbs.so.* # conflicts with the qemu part
+      - -usr/lib/*/libndctl.so.* # conflicts with the qemu part
+      - -usr/lib/*/libnuma.so.* # conflicts with the qemu part
+      - -usr/lib/*/libpmem.so.* # conflicts with the qemu part
+      - -usr/lib/*/libpmemobj.so.* # conflicts with the qemu part
+      - -usr/lib/*/librados.so.* # conflicts with qemu part
+      - -usr/lib/*/librbd.so.* # conflicts with qemu part
+      - -usr/lib/*/librdmacm.so.* # conflicts with the qemu part
+      - -usr/lib/*/libxen*.so.* # conflicts with qemu part
       - -usr/lib/*/libyajl.so.* # conflicts with qemu part
+      - -usr/lib/*/rsocket # conflicts with qemu part
+      - -usr/share/doc/libboost-* # conflicts with qemu part
+      - -usr/share/doc/libdaxctl* # conflicts with qemu part
+      - -usr/share/doc/libibverbs* # conflicts with qemu part
+      - -usr/share/doc/libndctl* # conflicts with qemu part
+      - -usr/share/doc/libnghttp* # conflicts with qemu part
+      - -usr/share/doc/libsasl* # conflicts with qemu part
+      - -usr/share/doc/libyajl* # conflicts with qemu part
     prime:
       - -usr/include
       - -usr/lib/pkgconfig
@@ -251,15 +305,6 @@ parts:
       sed -i "s#includedir=/usr/include#includedir=$CRAFT_STAGE/usr/include#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
       sed -i "s#libdir=/usr/lib#libdir=$CRAFT_STAGE/usr/lib#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
 
-  libphodav:
-    source: https://gitlab.gnome.org/GNOME/phodav.git
-    source-tag: 'v3.0'
-    source-depth: 1
-    plugin: meson
-    meson-parameters:
-      - --prefix=/usr
-      - -Dgtk_doc=disabled
-
   libspice-protocol:
     source: https://gitlab.freedesktop.org/spice/spice-protocol.git
     source-tag: 'v0.14.4'
@@ -276,7 +321,7 @@ parts:
     source-depth: 1
     plugin: meson
     override-build: |
-      python3 -m pip install six pyparsing asciidoc
+      python3 -m pip install --break-system-packages six pyparsing asciidoc
       craftctl default
     meson-parameters:
       - --prefix=/usr
@@ -326,37 +371,22 @@ parts:
     after: [ gnome-boxes ]
     plugin: nil
     stage-packages:
-      - libasn1-8-heimdal
-      - libcacard0
       - libcurl3-gnutls
-      - libgssapi3-heimdal
       - libgtk-vnc-2.0-0
       - libgvnc-1.0-0
-      - libhcrypto4-heimdal
-      - libheimbase1-heimdal
-      - libheimntlm0-heimdal
-      - libhx509-5-heimdal
-      - libkrb5-26-heimdal
-      - libldap-2.5-0
+      - libldap2
       - libnghttp2-14
       - libnspr4
       - libnss3
-      - libnuma1
       - libopus0
-      - libphodav-2.0-0
-      - libroken18-heimdal
+      - libphodav-3.0-0
       - librtmp1
       - libsasl2-2
       - libssh-4
-      - libusb-1.0-0
-      - libusbredirhost1
-      - libusbredirparser1
       - libva-x11-2
-      - libwind0-heimdal
       - pci.ids
       - usb.ids
     prime:
-      - usr/lib/*/libasn*.so.*
       - usr/lib/*/libcaca*.so.*
       - usr/lib/*/libcurl*.so.*
       - usr/lib/*/libgss**.so.*
@@ -381,13 +411,10 @@ parts:
       - usr/lib/*/libspice*.so.*
       - usr/lib/*/libssh*.so.*
       - usr/lib/*/libusb*.so.*
-      - lib/*/libusb*.so.*
       - usr/lib/*/libva*.so.*
-      - usr/lib/*/libwind*.so.*
       - usr/bin/osinfo*
       - usr/share/misc/pci.ids
       - usr/share/misc/usb.ids
-      - var/lib/usbutils/usb.ids
 
   osinfo-db:
     after: [ libraries ]
