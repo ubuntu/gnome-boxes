@@ -341,7 +341,7 @@ parts:
       - libvirt-glib
       - libosinfo
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '47.0'
+    source-tag: '48.0'
     source-depth: 1
 # ext:updatesnap
 #   version-format:
