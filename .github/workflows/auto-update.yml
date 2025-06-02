@@ -1,9 +1,11 @@
 name: Push new tag update to stable branch
 
 on:
-  schedule:
-    # Daily for now
-    - cron: '9 7 * * *'
+  pull_request:
+  push:
+    branches:
+      - edge
+      - stable
   workflow_dispatch:
 
 jobs:
