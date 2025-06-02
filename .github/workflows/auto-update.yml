@@ -14,7 +14,7 @@ jobs:
     - name: Checkout this repo
       uses: actions/checkout@v4
     - name: Run desktop-snaps action
-      uses: sergio-costas/ci@add-updatesnap-tool
+      uses: sergio-costas/ci/update-snap@add-updatesnap-tool
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         repo: ${{ github.repository }}
