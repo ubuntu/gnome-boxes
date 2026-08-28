@@ -19,8 +19,8 @@ layout:
     symlink: $SNAP/usr/share/libosinfo/pci.ids
   /usr/share/libosinfo/usb.ids:
     symlink: $SNAP/usr/share/libosinfo/usb.ids
-  /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
-    bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/libvirt
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvirt:
+    bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libvirt
   /usr/share/libvirt:
     bind: $SNAP/usr/share/libvirt
   /usr/lib/libvirt:
@@ -108,8 +108,8 @@ apps:
     desktop: usr/share/applications/org.gnome.Boxes.desktop
     common-id: org.gnome.Boxes.desktop
     environment:
-      LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes
-      GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/gnome-boxes/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/gnome-boxes
+      GI_TYPELIB_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/gnome-boxes/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}
       GTK_USE_PORTAL: '0'
       LIBVIRT_DEFAULT_URI: 'qemu+unix:///session'
 
@@ -293,8 +293,8 @@ parts:
       - -Dlibsoup-abi=3.0
     override-build: |
       craftctl default
-      sed -i "s#includedir=/usr/include#includedir=$CRAFT_STAGE/usr/include#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
-      sed -i "s#libdir=/usr/lib#libdir=$CRAFT_STAGE/usr/lib#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET/pkgconfig/libosinfo-1.0.pc
+      sed -i "s#includedir=/usr/include#includedir=$CRAFT_STAGE/usr/include#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pkgconfig/libosinfo-1.0.pc
+      sed -i "s#libdir=/usr/lib#libdir=$CRAFT_STAGE/usr/lib#g" $CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pkgconfig/libosinfo-1.0.pc
     prime:
       - -usr/include
       - -usr/lib/*/pkgconfig
@@ -354,7 +354,7 @@ parts:
       - libva-wayland2
       - usb.ids
     stage:
-      - -usr/lib/$CRAFT_ARCH_TRIPLET/libxml2.so.* # conflicts with qemu
+      - -usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libxml2.so.* # conflicts with qemu
     prime:
       - -usr/include
       - -usr/lib/*/pkgconfig
