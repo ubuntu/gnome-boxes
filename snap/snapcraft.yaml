@@ -392,7 +392,8 @@ parts:
       git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-recommended-downloads.patch
       git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-explain-usb-error.patch
       # Downloader hardcodes /var/tmp, which isn't writable in strict
-      # confinement; use $SNAP_USER_COMMON instead when available
+      # confinement; use $XDG_DOWNLOAD_DIR instead when available (exported
+      # by the gnome-46-2404 content snap's desktop-launch script)
       git apply $CRAFT_PROJECT_DIR/patches/gnome-boxes-snap-tmp-dir.patch
     build-environment:
       - C_INCLUDE_PATH: ${C_INCLUDE_PATH:+$C_INCLUDE_PATH:}$CRAFT_STAGE/usr/include/libvirt-gconfig-1.0:$CRAFT_STAGE/usr/include/libvirt-glib-1.0:$CRAFT_STAGE/usr/include/libvirt-gobject-1.0
