@@ -365,11 +365,11 @@ parts:
       - libvirt-glib
       - libosinfo
     source: https://gitlab.gnome.org/GNOME/gnome-boxes.git
-    source-tag: '47.0'
+    source-tag: '50.0'
     source-depth: 1
 # ext:updatesnap
 #   version-format:
-#     lower-than: 48.0
+#     lower-than: 51.0
     parse-info: [usr/share/metainfo/org.gnome.Boxes.metainfo.xml]
     plugin: meson
     meson-parameters:
