@@ -446,6 +446,9 @@ parts:
     stage-snaps: [ qemu-virgil/latest/edge ]
     stage-packages:
       - dnsmasq-base
+    override-stage: |
+      craftctl default
+      rm -f $CRAFT_STAGE/usr/lib/x86_64-linux-gnu/libxml2.so.2.9.14
 
   launcher:
     plugin: dump
