@@ -42,7 +42,7 @@
 
     <media arch="x86_64">
       <variant id="daily"/>
-      <url>http://cdimage.ubuntu.com/daily-live/current/stonking-desktop-amd64.iso</url>
+      <url>https://cdimage.ubuntu.com/ubuntu/stonking/daily-live/current/stonking-desktop-amd64.iso</url>
       <iso>
         <volume-id>Ubuntu-Daily-x86_64</volume-id>
       </iso>
