@@ -451,7 +451,6 @@ parts:
   osinfo-db:
     source: https://gitlab.com/libosinfo/osinfo-db.git
     source-depth: 1
-    source-commit: '267c33d8afdf74b385329d47800d018424be0465'
     plugin: make
     build-packages:
       - gettext
