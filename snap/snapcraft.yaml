@@ -330,7 +330,7 @@ parts:
       - -Dgtk_doc=disabled
       - -Dsmartcard=enabled
       - -Dusbredir=enabled
-      - -Dpolkit=enabled
+      - -Dpolkit=disabled
       - -Dlz4=enabled
       - -Dusb-acl-helper-dir=/usr/libexec
       - -Dusb-ids-path=/usr/share/misc/usb.ids
