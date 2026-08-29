@@ -81,6 +81,11 @@ slots:
     bus: session
     name: org.gnome.Boxes
 
+plugs:
+  polkit-usb-access:
+    interface: polkit
+    action-prefix: org.spice-space
+
 apps:
   gnome-boxes:
     command: usr/bin/gnome-boxes
@@ -98,6 +103,7 @@ apps:
       - network
       - network-bind
       - network-status
+      - polkit-usb-access
       - process-control
       - raw-usb
       - removable-media
@@ -358,6 +364,11 @@ parts:
     prime:
       - -usr/include
       - -usr/lib/*/pkgconfig
+    override-prime: |
+      craftctl default
+      mkdir -p "$CRAFT_PRIME"/meta/polkit
+      cp "$CRAFT_PART_INSTALL"/usr/share/polkit-1/actions/org.spice-space.lowlevelusbaccess.policy \
+        meta/polkit/polkit-usb-access.org.spice-space.lowlevelusbaccess.policy
 
   gnome-boxes:
     after:
