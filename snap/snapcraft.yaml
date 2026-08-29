@@ -16,7 +16,9 @@ layout:
   /usr/share/misc/pci.ids:
     symlink: $SNAP/usr/share/misc/pci.ids
   /usr/share/libosinfo/pci.ids:
-    symlink: $SNAP/usr/share/misc/pci.ids
+    symlink: $SNAP/usr/share/libosinfo/pci.ids
+  /usr/share/libosinfo/usb.ids:
+    symlink: $SNAP/usr/share/libosinfo/usb.ids
   /usr/lib/$CRAFT_ARCH_TRIPLET/libvirt:
     bind: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/libvirt
   /usr/share/libvirt:
@@ -112,6 +114,23 @@ apps:
       LIBVIRT_DEFAULT_URI: 'qemu+unix:///session'
 
 parts:
+  libpciaccess:
+    source: https://gitlab.freedesktop.org/xorg/lib/libpciaccess.git
+    source-depth: 1
+    source-tag: libpciaccess-0.19
+    plugin: meson
+    build-packages:
+      - zlib1g-dev
+      - xutils-dev
+    meson-parameters:
+      - --prefix=/usr
+      - --buildtype=release
+      - -Dzlib=enabled
+      - -Dpci-ids=/usr/share/misc
+    prime:
+      - -usr/include
+      - -usr/lib/*/pkgconfig
+
   libvirt:
     source: https://gitlab.com/libvirt/libvirt.git
     source-depth: 1
@@ -123,6 +142,8 @@ parts:
 #   version-format:
 #     lower-than: 10.5.0
     plugin: meson
+    after:
+      - libpciaccess
     build-packages:
       - libxml2-dev
       - libncurses5-dev
@@ -136,7 +157,6 @@ parts:
       - libdevmapper-dev
       - uuid-dev
       - libudev-dev
-      - libpciaccess-dev
       - libcurl4-gnutls-dev
       - libpolkit-gobject-1-dev
       - libcap-ng-dev
@@ -234,6 +254,7 @@ parts:
       - -usr/lib/*/librbd.so.* # conflicts with qemu part
       - -usr/lib/*/librdmacm.so.* # conflicts with the qemu part
       - -usr/lib/*/libxen*.so.* # conflicts with qemu part
+      - -usr/lib/*/libxml2.so.* # conflicts with qemu part
       - -usr/lib/*/libyajl.so.* # conflicts with qemu part
       - -usr/lib/*/rsocket # conflicts with qemu part
       - -usr/share/doc/libboost-* # conflicts with qemu part
@@ -261,7 +282,7 @@ parts:
 
   libosinfo:
     source: https://gitlab.com/libosinfo/libosinfo.git
-    source-tag: 'v1.12.0'
+    source-commit: 08f0772b7da207acc6015eec2d873c6ada3c2f8e
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -279,7 +300,7 @@ parts:
 
   libspice-protocol:
     source: https://gitlab.freedesktop.org/spice/spice-protocol.git
-    source-tag: 'v0.14.4'
+    source-tag: 'v0.14.5'
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -293,7 +314,7 @@ parts:
   libspice-gtk:
     after: [ libspice-protocol ]
     source: https://gitlab.freedesktop.org/spice/spice-gtk.git
-    source-tag: 'v0.42'
+    source-tag: 'v0.43'
     source-depth: 1
     plugin: meson
     override-pull: |
@@ -331,6 +352,8 @@ parts:
       - libva-x11-2
       - libva-wayland2
       - usb.ids
+    stage:
+      - -usr/lib/$CRAFT_ARCH_TRIPLET/libxml2.so.* # conflicts with qemu
     prime:
       - -usr/include
       - -usr/lib/*/pkgconfig
@@ -388,6 +411,8 @@ parts:
       - libsasl2-2
       - libssh-4
       - pci.ids
+    stage:
+      - -usr/lib/*/libxml2.so.* # conflicts with qemu part
     prime:
       - usr/lib/*/libcaca*.so.*
       - usr/lib/*/libcurl*.so.*
@@ -419,12 +444,9 @@ parts:
       - usr/share/misc/usb.ids
 
   osinfo-db:
-    source: https://salsa.debian.org/libvirt-team/osinfo-db.git
+    source: https://gitlab.com/libosinfo/osinfo-db.git
     source-depth: 1
-    source-tag: 'upstream/0.20240701'
-# ext:updatesnap
-#   version-format:
-#     format: "upstream/%M.%m"
+    source-commit: '267c33d8afdf74b385329d47800d018424be0465'
     plugin: make
     build-packages:
       - gettext
@@ -435,9 +457,6 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/usr/share/osinfo
       tar xf osinfo-db-*.tar.xz --strip-components=1 -C $CRAFT_PART_INSTALL/usr/share/osinfo
       cp $CRAFT_PROJECT_DIR/ubuntu-daily.xml $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
-      # fix broken focal revision
-      FOCAL="$(wget -O- -q http://changelogs.ubuntu.com/meta-release-lts | grep "Version: 20.04" | cut -d' ' -f2)"
-      sed -i "s/20.04.3/$FOCAL/" $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-20.04.xml
     prime:
       - usr/share/osinfo
 
@@ -446,9 +465,6 @@ parts:
     stage-snaps: [ qemu-virgil/latest/edge ]
     stage-packages:
       - dnsmasq-base
-    override-stage: |
-      craftctl default
-      rm -f $CRAFT_STAGE/usr/lib/x86_64-linux-gnu/libxml2.so.2.9.14
 
   launcher:
     plugin: dump
