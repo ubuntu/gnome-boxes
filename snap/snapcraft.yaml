@@ -280,7 +280,7 @@ parts:
 
   libosinfo:
     source: https://gitlab.com/libosinfo/libosinfo.git
-    source-tag: 'v1.12.0'
+    source-commit: 08f0772b7da207acc6015eec2d873c6ada3c2f8e
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -298,7 +298,7 @@ parts:
 
   libspice-protocol:
     source: https://gitlab.freedesktop.org/spice/spice-protocol.git
-    source-tag: 'v0.14.4'
+    source-tag: 'v0.14.5'
     source-depth: 1
     plugin: meson
     meson-parameters:
@@ -312,7 +312,7 @@ parts:
   libspice-gtk:
     after: [ libspice-protocol ]
     source: https://gitlab.freedesktop.org/spice/spice-gtk.git
-    source-tag: 'v0.42'
+    source-tag: 'v0.43'
     source-depth: 1
     plugin: meson
     override-pull: |
