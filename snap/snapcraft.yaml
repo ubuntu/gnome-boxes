@@ -461,7 +461,35 @@ parts:
       craftctl default
       mkdir -p $CRAFT_PART_INSTALL/usr/share/osinfo
       tar xf osinfo-db-*.tar.xz --strip-components=1 -C $CRAFT_PART_INSTALL/usr/share/osinfo
-      cp $CRAFT_PROJECT_DIR/ubuntu-daily.xml $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/
+      VERSION=$(wget -qO- https://changelogs.ubuntu.com/meta-release-development | python3 -c '
+      import sys
+
+      def ver_tuple(v):
+          return tuple(int(p) for p in v.split("."))
+
+      best = None
+      block = {}
+      for line in sys.stdin:
+          line = line.strip()
+          if not line:
+              if block.get("Supported") == "0":
+                  v = ver_tuple(block.get("Version", "0"))
+                  if best is None or v > best[0]:
+                      best = (v, block.get("Dist"))
+              block = {}
+              continue
+          if ":" in line:
+              k, val = line.split(":", 1)
+              block[k.strip()] = val.strip()
+      if block.get("Supported") == "0":
+          v = ver_tuple(block.get("Version", "0"))
+          if best is None or v > best[0]:
+              best = (v, block.get("Dist"))
+      if best:
+          print(best[1])
+      ')
+      sed "s/@VERSION@/$VERSION/g" $CRAFT_PROJECT_DIR/ubuntu-daily.xml \
+        > $CRAFT_PART_INSTALL/usr/share/osinfo/os/ubuntu.com/ubuntu-daily.xml
     prime:
       - usr/share/osinfo
 
