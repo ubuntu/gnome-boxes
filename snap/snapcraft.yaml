@@ -252,6 +252,7 @@ parts:
       - -usr/lib/*/librbd.so.* # conflicts with qemu part
       - -usr/lib/*/librdmacm.so.* # conflicts with the qemu part
       - -usr/lib/*/libxen*.so.* # conflicts with qemu part
+      - -usr/lib/*/libxml2.so.* # conflicts with qemu part
       - -usr/lib/*/libyajl.so.* # conflicts with qemu part
       - -usr/lib/*/rsocket # conflicts with qemu part
       - -usr/share/doc/libboost-* # conflicts with qemu part
@@ -349,6 +350,8 @@ parts:
       - libva-x11-2
       - libva-wayland2
       - usb.ids
+    stage:
+      - -usr/lib/$CRAFT_ARCH_TRIPLET/libxml2.so.* # conflicts with qemu
     prime:
       - -usr/include
       - -usr/lib/*/pkgconfig
@@ -406,6 +409,8 @@ parts:
       - libsasl2-2
       - libssh-4
       - pci.ids
+    stage:
+      - -usr/lib/*/libxml2.so.* # conflicts with qemu part
     prime:
       - usr/lib/*/libcaca*.so.*
       - usr/lib/*/libcurl*.so.*
@@ -464,9 +469,6 @@ parts:
     stage-snaps: [ qemu-virgil/latest/edge ]
     stage-packages:
       - dnsmasq-base
-    override-stage: |
-      craftctl default
-      rm -f $CRAFT_STAGE/usr/lib/x86_64-linux-gnu/libxml2.so.2.9.14
 
   launcher:
     plugin: dump
